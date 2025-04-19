@@ -41,10 +41,18 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'admin'],
+    enum: ['user', 'admin', 'moderator'],
     default: 'user'
   },
   isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationToken: String,
+  verificationTokenExpiry: Date,
+  resetPasswordToken: String,
+  resetPasswordExpiry: Date,
+  emailVerified: {
     type: Boolean,
     default: false
   },
@@ -61,6 +69,24 @@ const userSchema = new mongoose.Schema({
       type: Number,
       default: 0
     }
+  },
+  permissions: {
+    canCreateProduct: {
+      type: Boolean,
+      default: true
+    },
+    canCreateTradeOffer: {
+      type: Boolean,
+      default: true
+    },
+    canSendMessages: {
+      type: Boolean,
+      default: true
+    }
+  },
+  lastActive: {
+    type: Date,
+    default: Date.now
   },
   createdAt: {
     type: Date,
