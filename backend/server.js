@@ -12,6 +12,7 @@ const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const tradeOfferRoutes = require('./routes/tradeOfferRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 // Middlewares
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -50,6 +51,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/trade-offers', tradeOfferRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Root Route
 app.get('/', (req, res) => {
