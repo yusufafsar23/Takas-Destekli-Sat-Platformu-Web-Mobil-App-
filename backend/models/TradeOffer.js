@@ -30,6 +30,10 @@ const tradeOfferSchema = new mongoose.Schema({
     type: String,
     maxlength: 500
   },
+  responseMessage: {
+    type: String,
+    maxlength: 500
+  },
   status: {
     type: String,
     enum: ['pending', 'accepted', 'rejected', 'cancelled', 'completed'],
@@ -43,6 +47,32 @@ const tradeOfferSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'TradeOffer'
   },
+  counterOffers: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'TradeOffer'
+  }],
+  specialConditions: {
+    meetupPreferred: {
+      type: Boolean,
+      default: false
+    },
+    meetupLocation: {
+      type: String,
+      trim: true
+    },
+    shippingPreferred: {
+      type: Boolean,
+      default: false
+    },
+    shippingDetails: {
+      type: String,
+      trim: true
+    },
+    additionalNotes: {
+      type: String,
+      maxlength: 1000
+    }
+  },
   offerExpiry: {
     type: Date, 
     default: function() {
@@ -51,6 +81,9 @@ const tradeOfferSchema = new mongoose.Schema({
       date.setDate(date.getDate() + 7);
       return date;
     }
+  },
+  completedDate: {
+    type: Date
   },
   createdAt: {
     type: Date,
@@ -61,7 +94,29 @@ const tradeOfferSchema = new mongoose.Schema({
     default: Date.now
   }
 }, {
-  timestamps: true
+  timestamps: true,
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true }
+});
+
+// Sanal alan: Teklif geçerli mi?
+tradeOfferSchema.virtual('isValid').get(function() {
+  return this.status === 'pending' && new Date() < this.offerExpiry;
+});
+
+// Sanal alan: Teklifin kalan süresi (gün)
+tradeOfferSchema.virtual('daysRemaining').get(function() {
+  if (this.status !== 'pending') return 0;
+  
+  const today = new Date();
+  const expiry = new Date(this.offerExpiry);
+  
+  if (today > expiry) return 0;
+  
+  const diffTime = Math.abs(expiry - today);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
 });
 
 const TradeOffer = mongoose.model('TradeOffer', tradeOfferSchema);

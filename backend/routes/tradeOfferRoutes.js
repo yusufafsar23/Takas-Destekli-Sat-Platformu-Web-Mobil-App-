@@ -1,14 +1,42 @@
 const express = require('express');
 const router = express.Router();
-const { createTradeOffer, getTradeOffers, getTradeOffer, updateTradeOffer } = require('../controllers/tradeOfferController');
+const { 
+    createTradeOffer, 
+    getReceivedTradeOffers, 
+    getSentTradeOffers, 
+    getAllTradeOffers, 
+    getTradeOfferById, 
+    acceptTradeOffer, 
+    rejectTradeOffer, 
+    cancelTradeOffer, 
+    createCounterOffer, 
+    getUserTradeHistory, 
+    completeTradeOffer, 
+    getSmartMatchesForProduct 
+} = require('../controllers/tradeOfferController');
+
 const auth = require('../middleware/auth');
+const isAdmin = require('../middleware/isAdmin');
 
-// Public routes
-router.get('/', getTradeOffers);
-router.get('/:id', getTradeOffer);
+// Genel route'lar (Admin için)
+router.get('/all', auth, isAdmin, getAllTradeOffers);
 
-// Protected routes
+// Kullanıcı takas teklifleri
+router.get('/received', auth, getReceivedTradeOffers);
+router.get('/sent', auth, getSentTradeOffers);
+router.get('/history', auth, getUserTradeHistory);
+router.get('/user/:userId/history', auth, getUserTradeHistory);
+
+// Teklif detayı ve işlemler
+router.get('/:id', auth, getTradeOfferById);
 router.post('/', auth, createTradeOffer);
-router.patch('/:id', auth, updateTradeOffer);
+router.post('/counter-offer', auth, createCounterOffer);
+router.put('/:id/accept', auth, acceptTradeOffer);
+router.put('/:id/reject', auth, rejectTradeOffer);
+router.put('/:id/cancel', auth, cancelTradeOffer);
+router.put('/:id/complete', auth, completeTradeOffer);
+
+// Akıllı eşleştirme
+router.get('/smart-matches/:productId', auth, getSmartMatchesForProduct);
 
 module.exports = router; 
