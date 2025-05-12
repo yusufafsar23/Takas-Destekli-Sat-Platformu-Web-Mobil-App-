@@ -17,6 +17,9 @@ const categoryRoutes = require('./routes/categoryRoutes');
 // Middlewares
 const { errorHandler, notFound } = require('./middleware/errorHandler');
 
+// API Dokümantasyonu
+const { swaggerDocs } = require('./docs/swagger');
+
 // Config
 dotenv.config();
 
@@ -45,6 +48,9 @@ if (process.env.NODE_ENV === 'development') {
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/takas-platform')
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
+
+// API Documentation Setup
+swaggerDocs(app);
 
 // API Routes
 app.use('/api/users', userRoutes);
@@ -104,4 +110,5 @@ app.set('io', io);
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`API Dokümantasyonu: http://localhost:${PORT}/api-docs`);
 }); 

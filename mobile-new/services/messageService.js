@@ -11,10 +11,20 @@ const messageService = {
     }
   },
 
+  // Arşivlenmiş konuşmaları getirme
+  async getArchivedConversations() {
+    try {
+      const response = await api.get('/messages/conversations/archived');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Bir konuşmanın mesajlarını getirme
   async getConversationMessages(conversationId, params = {}) {
     try {
-      const response = await api.get(`/messages/conversations/${conversationId}`, { params });
+      const response = await api.get(`/messages/conversations/${conversationId}/messages`, { params });
       return response.data;
     } catch (error) {
       throw error;
@@ -22,9 +32,13 @@ const messageService = {
   },
 
   // Kullanıcı ile olan konuşmayı getirme veya oluşturma
-  async getOrCreateConversation(userId) {
+  async createConversation(participantId, productId, tradeOfferId) {
     try {
-      const response = await api.post('/messages/conversations', { userId });
+      const response = await api.post('/messages/conversations', { 
+        participantId, 
+        ...(productId && { productId }),
+        ...(tradeOfferId && { tradeOfferId })
+      });
       return response.data;
     } catch (error) {
       throw error;
@@ -32,26 +46,13 @@ const messageService = {
   },
 
   // Mesaj gönderme
-  async sendMessage(conversationId, content) {
+  async sendMessage(conversationId, text, attachments) {
     try {
-      const response = await api.post(`/messages/conversations/${conversationId}`, { content });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Medya mesajı gönderme
-  async sendMediaMessage(conversationId, media) {
-    try {
-      const formData = new FormData();
-      formData.append('media', media);
-
-      const response = await api.post(`/messages/conversations/${conversationId}/media`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const payload = { text };
+      if (attachments && attachments.length > 0) {
+        payload.attachments = attachments;
+      }
+      const response = await api.post(`/messages/conversations/${conversationId}`, payload);
       return response.data;
     } catch (error) {
       throw error;
@@ -68,10 +69,20 @@ const messageService = {
     }
   },
 
-  // Konuşmayı silme
-  async deleteConversation(conversationId) {
+  // Konuşmayı arşivleme
+  async archiveConversation(conversationId) {
     try {
-      const response = await api.delete(`/messages/conversations/${conversationId}`);
+      const response = await api.put(`/messages/conversations/${conversationId}/archive`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Konuşmayı arşivden çıkarma
+  async unarchiveConversation(conversationId) {
+    try {
+      const response = await api.put(`/messages/conversations/${conversationId}/unarchive`);
       return response.data;
     } catch (error) {
       throw error;

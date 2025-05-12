@@ -1,0 +1,139 @@
+tags:
+  - name: Users
+    description: Kullanıcı yönetimi ile ilgili işlemler
+
+/api/users/register:
+  post:
+    tags:
+      - Users
+    summary: Yeni kullanıcı kaydı
+    description: Yeni bir kullanıcı hesabı oluşturur
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - username
+              - email
+              - password
+              - fullName
+            properties:
+              username:
+                type: string
+                example: "johndoe"
+              email:
+                type: string
+                format: email
+                example: "john@example.com"
+              password:
+                type: string
+                format: password
+                example: "password123"
+              fullName:
+                type: string
+                example: "John Doe"
+              phone:
+                type: string
+                example: "+90 555 123 4567"
+              address:
+                type: string
+                example: "Istanbul, Turkey"
+    responses:
+      201:
+        description: Kullanıcı başarıyla oluşturuldu
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                user:
+                  type: object
+                token:
+                  type: string
+      400:
+        description: Geçersiz giriş verileri
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+
+/api/users/login:
+  post:
+    tags:
+      - Users
+    summary: Kullanıcı girişi
+    description: Kullanıcı hesabına giriş yapar ve JWT token döndürür
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email:
+                type: string
+                format: email
+                example: "john@example.com"
+              password:
+                type: string
+                format: password
+                example: "password123"
+    responses:
+      200:
+        description: Başarılı giriş
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+                token:
+                  type: string
+      400:
+        description: Geçersiz kimlik bilgileri
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string
+
+/api/users/profile:
+  get:
+    tags:
+      - Users
+    summary: Kullanıcı profili
+    description: Giriş yapmış kullanıcının profil bilgilerini getirir
+    security:
+      - bearerAuth: []
+    responses:
+      200:
+        description: Kullanıcı profili başarıyla getirildi
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user:
+                  type: object
+      401:
+        description: Yetkilendirme hatası
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                error:
+                  type: string 
