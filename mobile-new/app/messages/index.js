@@ -44,7 +44,24 @@ const MessagesScreen = () => {
     try {
       setLoading(true);
       const data = await messageService.getConversations();
-      setConversations(data);
+      
+      // Mükerrer konuşmaları filtrele
+      const filteredConversations = Array.isArray(data) 
+        ? data.filter((conversation, index, self) => {
+            // Aynı katılımcıya sahip ilk konuşmayı tut, diğerlerini filtrele
+            return index === self.findIndex(c => {
+              // Aynı kullanıcılar arasındaki konuşma mı kontrol et
+              if (!conversation.participants || !c.participants) return false;
+              
+              const participantsA = conversation.participants.map(p => p._id).sort().join(',');
+              const participantsB = c.participants.map(p => p._id).sort().join(',');
+              
+              return participantsA === participantsB;
+            });
+          })
+        : [];
+      
+      setConversations(filteredConversations);
     } catch (error) {
       console.error('Konuşmalar yüklenirken hata oluştu:', error);
     } finally {

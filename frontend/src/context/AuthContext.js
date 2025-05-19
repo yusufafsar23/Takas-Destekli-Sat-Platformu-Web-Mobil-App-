@@ -4,6 +4,35 @@ import { authService } from '../services/api';
 // Create the auth context
 const AuthContext = createContext();
 
+// Helper function to extract user data from different API response formats
+const extractUserData = (response) => {
+  if (!response) return null;
+  
+  // Direct user object
+  if (response.firstName !== undefined || response.username !== undefined) {
+    return response;
+  }
+  
+  // User in response.data
+  if (response.data && (response.data.firstName !== undefined || response.data.username !== undefined)) {
+    return response.data;
+  }
+  
+  // User in response.data.user
+  if (response.data && response.data.user && 
+     (response.data.user.firstName !== undefined || response.data.user.username !== undefined)) {
+    return response.data.user;
+  }
+  
+  // User in response.data.data
+  if (response.data && response.data.data && 
+     (response.data.data.firstName !== undefined || response.data.data.username !== undefined)) {
+    return response.data.data;
+  }
+  
+  return null;
+};
+
 // Context provider component
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -17,7 +46,10 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('token');
         if (token) {
           const response = await authService.profile();
-          setUser(response.data);
+          console.log('Auth profile response:', response);
+          const userData = extractUserData(response);
+          console.log('Extracted user data:', userData);
+          setUser(userData);
         }
       } catch (err) {
         console.error('Error checking authentication:', err);
@@ -37,9 +69,17 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const response = await authService.login(credentials);
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
-      return response.data;
+      const token = response.data?.token || response.token;
+      
+      if (token) {
+        localStorage.setItem('token', token);
+      } else {
+        throw new Error('No token received from server');
+      }
+      
+      const userData = extractUserData(response);
+      setUser(userData);
+      return response.data || response;
     } catch (err) {
       setError(err.response?.data?.message || 'Giriş yapılamadı');
       throw err;
@@ -54,9 +94,17 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const response = await authService.register(userData);
-      localStorage.setItem('token', response.data.token);
-      setUser(response.data.user);
-      return response.data;
+      const token = response.data?.token || response.token;
+      
+      if (token) {
+        localStorage.setItem('token', token);
+      } else {
+        throw new Error('No token received from server');
+      }
+      
+      const userDataFromResponse = extractUserData(response);
+      setUser(userDataFromResponse);
+      return response.data || response;
     } catch (err) {
       setError(err.response?.data?.message || 'Kayıt yapılamadı');
       throw err;
@@ -66,9 +114,15 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
+  const logout = (callback) => {
     localStorage.removeItem('token');
     setUser(null);
+    setIsLoading(false); // Çıkış yapınca loading durumunu da kapat
+    
+    // Eğer callback varsa çağır (yönlendirme için)
+    if (typeof callback === 'function') {
+      callback();
+    }
   };
 
   // Update profile function
@@ -77,8 +131,9 @@ export const AuthProvider = ({ children }) => {
       setIsLoading(true);
       setError(null);
       const response = await authService.updateProfile(userData);
-      setUser(response.data);
-      return response.data;
+      const updatedUserData = extractUserData(response);
+      setUser(updatedUserData);
+      return updatedUserData;
     } catch (err) {
       setError(err.response?.data?.message || 'Profil güncellenemedi');
       throw err;

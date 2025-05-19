@@ -13,30 +13,58 @@ const createTradeOffer = async (req, res) => {
             specialConditions
         } = req.body;
 
+        console.log("Trade offer request:", {
+            requestedProductId,
+            offeredProductId,
+            userId: req.user._id,
+            additionalCashOffer, 
+            message
+        });
+
         // Talep edilen ürün kontrolü
         const requestedProduct = await Product.findById(requestedProductId);
         if (!requestedProduct) {
+            console.log("Requested product not found:", requestedProductId);
             return res.status(404).json({ error: 'Talep edilen ürün bulunamadı.' });
         }
+        console.log("Requested product found:", {
+            id: requestedProduct._id,
+            owner: requestedProduct.owner,
+            acceptsTradeOffers: requestedProduct.acceptsTradeOffers
+        });
 
         // Teklif edilen ürün kontrolü
         const offeredProduct = await Product.findById(offeredProductId);
         if (!offeredProduct) {
+            console.log("Offered product not found:", offeredProductId);
             return res.status(404).json({ error: 'Teklif edilen ürün bulunamadı.' });
         }
+        console.log("Offered product found:", {
+            id: offeredProduct._id,
+            owner: offeredProduct.owner
+        });
 
         // Talep edilen ürün takas kabul ediyor mu kontrolü
         if (!requestedProduct.acceptsTradeOffers) {
+            console.log("Product does not accept trade offers:", requestedProductId);
             return res.status(400).json({ error: 'Bu ürün takas tekliflerine kapalı.' });
         }
 
         // Teklif eden kişi kontrolü
         if (requestedProduct.owner.toString() === req.user._id.toString()) {
+            console.log("User is trying to trade with their own product:", {
+                productOwner: requestedProduct.owner.toString(),
+                userId: req.user._id.toString()
+            });
             return res.status(400).json({ error: 'Kendi ürününüz için takas teklifi yapamazsınız.' });
         }
 
         // Teklif edilen ürün sahibi kontrolü
         if (offeredProduct.owner.toString() !== req.user._id.toString()) {
+            console.log("Offered product does not belong to user:", {
+                productOwner: offeredProduct.owner.toString(),
+                userId: req.user._id.toString()
+            });
             return res.status(403).json({ error: 'Teklif ettiğiniz ürün size ait değil.' });
         }
 
@@ -53,9 +81,11 @@ const createTradeOffer = async (req, res) => {
         });
 
         await tradeOffer.save();
+        console.log("Trade offer created successfully:", tradeOffer._id);
         
         res.status(201).json(tradeOffer);
     } catch (error) {
+        console.error("Error creating trade offer:", error);
         res.status(400).json({ error: error.message });
     }
 };
@@ -96,6 +126,58 @@ const getSentTradeOffers = async (req, res) => {
 
         res.json(tradeOffers);
     } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+};
+
+// Combine sent and received trade offers
+const getMyTradeOffers = async (req, res) => {
+    try {
+        const { status } = req.query;
+        const userId = req.user._id;
+        
+        // Create a query that matches offers either sent or received by the user
+        const query = {
+            $or: [
+                { offeredBy: userId },
+                { requestedFrom: userId }
+            ]
+        };
+
+        if (status) query.status = status;
+
+        const tradeOffers = await TradeOffer.find(query)
+            .populate({
+                path: 'requestedProduct',
+                select: 'title price images status slug',
+                populate: {
+                    path: 'owner',
+                    select: 'username avatar'
+                }
+            })
+            .populate({
+                path: 'offeredProduct',
+                select: 'title price images status slug',
+                populate: {
+                    path: 'owner',
+                    select: 'username avatar'
+                }
+            })
+            .populate('offeredBy', 'username avatar')
+            .populate('requestedFrom', 'username avatar')
+            .sort({ createdAt: -1 });
+
+        // Add a property to indicate if the user is the sender or receiver
+        const enrichedOffers = tradeOffers.map(offer => {
+            const offerObj = offer.toObject();
+            offerObj.isSender = offer.offeredBy._id.toString() === userId.toString();
+            offerObj.isReceiver = offer.requestedFrom._id.toString() === userId.toString();
+            return offerObj;
+        });
+
+        res.json(enrichedOffers);
+    } catch (error) {
+        console.error('Error in getMyTradeOffers:', error);
         res.status(500).json({ error: error.message });
     }
 };
@@ -471,5 +553,6 @@ module.exports = {
     createCounterOffer,
     getUserTradeHistory,
     completeTradeOffer,
-    getSmartMatchesForProduct
+    getSmartMatchesForProduct,
+    getMyTradeOffers
 }; 

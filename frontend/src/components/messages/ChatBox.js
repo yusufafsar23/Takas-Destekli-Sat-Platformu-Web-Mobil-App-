@@ -3,23 +3,58 @@ import '../../styles/Messages.css';
 
 const ChatBox = ({ conversation, messages, onSendMessage, currentUserId }) => {
   const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [sendError, setSendError] = useState(null);
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   
-  // Mesajlar yüklendiğinde ve yeni mesaj geldiğinde otomatik scroll
+  // Mesajlar yüklendiğinde ilk kez dibine kaydır, sonrasında otomatik scroll kapat
   useEffect(() => {
-    scrollToBottom();
+    // Sadece ilk mesaj yüklendiğinde aşağıya kaydır
+    if (messagesContainerRef.current && messages.length > 0) {
+      // İlk yükleme kontrolü - scrollTop === 0 ise sayfanın en üstünde demektir
+      if (messagesContainerRef.current.scrollTop === 0) {
+        // İlk kez yükleniyorsa aşağıya kaydır
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+      }
+    }
   }, [messages]);
   
+  // Manuel olarak aşağıya scroll yapma 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
   
   // Mesaj gönderme
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (newMessage.trim()) {
-      onSendMessage(newMessage);
+    if (!newMessage.trim() || sendingMessage) return;
+    
+    try {
+      setSendingMessage(true);
+      setSendError(null);
+      
+      console.log('Sending message to conversation:', {
+        conversationId: conversation._id,
+        message: newMessage
+      });
+      
+      await onSendMessage(newMessage);
       setNewMessage('');
+      
+      // Mesaj gönderildikten sonra manuel olarak alt kısma scroll yap
+      setTimeout(() => {
+        if (messagesContainerRef.current) {
+          messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      setSendError('Mesaj gönderilemedi. Lütfen tekrar deneyin.');
+    } finally {
+      setSendingMessage(false);
     }
   };
   
@@ -81,9 +116,16 @@ const ChatBox = ({ conversation, messages, onSendMessage, currentUserId }) => {
     <div className="chat-box">
       <div className="chat-header">
         <h3>{getRecipientName()}</h3>
+        <button 
+          onClick={scrollToBottom}
+          className="scroll-button"
+          title="Mesajların sonuna git"
+        >
+          Sona Git
+        </button>
       </div>
       
-      <div className="messages-container">
+      <div className="messages-container" ref={messagesContainerRef}>
         {messages.length === 0 ? (
           <div className="empty-chat">
             <p>Henüz mesaj yok. Mesajlaşmaya başlayın!</p>
@@ -97,7 +139,7 @@ const ChatBox = ({ conversation, messages, onSendMessage, currentUserId }) => {
                 </div>
                 
                 {group.messages.map((message, messageIndex) => {
-                  const isCurrentUser = message.sender === currentUserId;
+                  const isCurrentUser = message.sender && (message.sender._id === currentUserId || message.sender === currentUserId);
                   return (
                     <div 
                       key={message._id || messageIndex} 
@@ -122,6 +164,10 @@ const ChatBox = ({ conversation, messages, onSendMessage, currentUserId }) => {
         )}
       </div>
       
+      {sendError && (
+        <div className="error-message">{sendError}</div>
+      )}
+      
       <form className="message-form" onSubmit={handleSendMessage}>
         <input
           type="text"
@@ -129,9 +175,14 @@ const ChatBox = ({ conversation, messages, onSendMessage, currentUserId }) => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Bir mesaj yazın..."
           className="message-input"
+          disabled={sendingMessage}
         />
-        <button type="submit" className="send-button" disabled={!newMessage.trim()}>
-          Gönder
+        <button 
+          type="submit" 
+          className="send-button" 
+          disabled={!newMessage.trim() || sendingMessage}
+        >
+          {sendingMessage ? 'Gönderiliyor...' : 'Gönder'}
         </button>
       </form>
     </div>

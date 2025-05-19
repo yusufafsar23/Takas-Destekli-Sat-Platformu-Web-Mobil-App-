@@ -1,0 +1,9 @@
+Bu klasör, Takas Platformu'nun ekip üyelerinin fotoğraflarını içerir.
+
+Gerçek bir uygulamada, bu klasöre aşağıdaki dosyalar eklenmelidir:
+- team1.jpg (CEO & Kurucu)
+- team2.jpg (CTO)
+- team3.jpg (Pazarlama Direktörü)
+- team4.jpg (Müşteri Deneyimi Lideri)
+
+Bu dosyalar, About.js sayfasında kullanılmaktadır. 

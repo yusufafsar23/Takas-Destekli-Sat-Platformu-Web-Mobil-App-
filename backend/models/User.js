@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
   username: {
@@ -102,11 +102,14 @@ const userSchema = new mongoose.Schema({
 
 // Password hashing middleware
 userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
+  // Eğer password değiştirilmemişse veya şifre zaten bcrypt hash formatındaysa, hash yapma
+  if (!this.isModified('password') || this.password.startsWith('$2b$') || this.password.startsWith('$2a$')) return next();
   
   try {
+    console.log('Hashing password for user:', this.email);
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
+    console.log('Password hashed successfully');
     next();
   } catch (error) {
     next(error);

@@ -39,12 +39,28 @@ const createConversation = async (req, res) => {
 // Mesaj Gönderme
 const sendMessage = async (req, res) => {
     try {
-        const { conversationId, text, attachments } = req.body;
+        // conversationId'yi hem URL parametresinden hem de gövdeden alabilir
+        const paramConversationId = req.params.conversationId;
+        const bodyConversationId = req.body.conversationId;
+        const conversationId = paramConversationId || bodyConversationId;
+        
+        console.log('Received message request:', {
+            paramId: paramConversationId,
+            bodyId: bodyConversationId,
+            finalId: conversationId,
+            body: req.body
+        });
+
+        if (!conversationId) {
+            return res.status(400).json({ error: 'Konuşma ID gereklidir.' });
+        }
+
+        const { text, attachments } = req.body;
 
         // Konuşma kontrolü
         const conversation = await Conversation.findById(conversationId);
         if (!conversation) {
-            return res.status(404).json({ error: 'Konuşma bulunamadı.' });
+            return res.status(404).json({ error: 'Konuşma bulunamadı.', requestedId: conversationId });
         }
 
         // Katılımcı kontrolü
