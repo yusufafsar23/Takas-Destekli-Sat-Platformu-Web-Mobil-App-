@@ -257,6 +257,9 @@ const getProducts = async (req, res, next) => {
             }
         }
         
+        // Toplam ürün sayısını hesapla
+        const totalProducts = await Product.countDocuments(query);
+        
         // Ürünleri getir
         const products = await Product.find(query)
             .sort(sortOptions)
@@ -280,11 +283,11 @@ const getProducts = async (req, res, next) => {
 
         res.status(200).json({
             success: true,
-            data: products,
-            total,
-            count: total,
-            totalPages: Math.ceil(total / limit),
-            currentPage: Number(page)
+            count: products.length,
+            total: totalProducts,
+            totalPages: Math.ceil(totalProducts / limit),
+            currentPage: page,
+            data: products
         });
     } catch (error) {
         next(error);
