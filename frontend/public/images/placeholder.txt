@@ -1,0 +1,16 @@
+// Bu dosya, resim dosyaları için yer tutucu olarak konulmuştur.
+// Aşağıdaki kategorilere ait resimler eklenebilir:
+
+- electronics.jpg
+- furniture.jpg
+- clothing.jpg
+- books.jpg
+- sports.jpg
+- gaming.jpg
+- collectibles.jpg
+- banner1.jpg
+- banner2.jpg
+- product-placeholder.jpg
+
+// Resimler: 800x600 veya 1200x800 boyutlarında, JPG formatında olmalıdır.
+// Banner resimler: 1920x500 boyutunda olmalıdır. 

@@ -5,6 +5,19 @@ const messageService = {
   async getConversations() {
     try {
       const response = await api.get('/messages/conversations');
+      console.log('Conversations response:', response);
+      // API direkt olarak array dönüyor
+      return response || [];
+    } catch (error) {
+      console.error('Error in getConversations:', error);
+      return [];
+    }
+  },
+
+  // Arşivlenmiş konuşmaları getirme
+  async getArchivedConversations() {
+    try {
+      const response = await api.get('/messages/conversations/archived');
       return response.data;
     } catch (error) {
       throw error;
@@ -14,47 +27,43 @@ const messageService = {
   // Bir konuşmanın mesajlarını getirme
   async getConversationMessages(conversationId, params = {}) {
     try {
-      const response = await api.get(`/messages/conversations/${conversationId}`, { params });
-      return response.data;
+      const response = await api.get(`/messages/conversations/${conversationId}/messages`, { params });
+      console.log('Messages response:', response);
+      // API direkt olarak array dönüyor
+      return response || [];
     } catch (error) {
-      throw error;
+      console.error('Error in getConversationMessages:', error);
+      return [];
     }
   },
 
   // Kullanıcı ile olan konuşmayı getirme veya oluşturma
-  async getOrCreateConversation(userId) {
+  async createConversation(participantId, productId, tradeOfferId) {
     try {
-      const response = await api.post('/messages/conversations', { userId });
-      return response.data;
+      const response = await api.post('/messages/conversations', { 
+        participantId, 
+        ...(productId && { productId }),
+        ...(tradeOfferId && { tradeOfferId })
+      });
+      return response || {};
     } catch (error) {
-      throw error;
+      console.error('Error in createConversation:', error);
+      return null;
     }
   },
 
   // Mesaj gönderme
-  async sendMessage(conversationId, content) {
+  async sendMessage(conversationId, text, attachments) {
     try {
-      const response = await api.post(`/messages/conversations/${conversationId}`, { content });
-      return response.data;
+      const payload = { text };
+      if (attachments && attachments.length > 0) {
+        payload.attachments = attachments;
+      }
+      const response = await api.post(`/messages/conversations/${conversationId}`, payload);
+      return response || {};
     } catch (error) {
-      throw error;
-    }
-  },
-
-  // Medya mesajı gönderme
-  async sendMediaMessage(conversationId, media) {
-    try {
-      const formData = new FormData();
-      formData.append('media', media);
-
-      const response = await api.post(`/messages/conversations/${conversationId}/media`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
+      console.error('Error in sendMessage:', error);
+      return null;
     }
   },
 
@@ -62,19 +71,32 @@ const messageService = {
   async markAsRead(conversationId) {
     try {
       const response = await api.put(`/messages/conversations/${conversationId}/read`);
-      return response.data;
+      return response || {};
     } catch (error) {
-      throw error;
+      console.error('Error in markAsRead:', error);
+      return null;
     }
   },
 
-  // Konuşmayı silme
-  async deleteConversation(conversationId) {
+  // Konuşmayı arşivleme
+  async archiveConversation(conversationId) {
     try {
-      const response = await api.delete(`/messages/conversations/${conversationId}`);
-      return response.data;
+      const response = await api.put(`/messages/conversations/${conversationId}/archive`);
+      return response || {};
     } catch (error) {
-      throw error;
+      console.error('Error in archiveConversation:', error);
+      return null;
+    }
+  },
+
+  // Konuşmayı arşivden çıkarma
+  async unarchiveConversation(conversationId) {
+    try {
+      const response = await api.put(`/messages/conversations/${conversationId}/unarchive`);
+      return response || {};
+    } catch (error) {
+      console.error('Error in unarchiveConversation:', error);
+      return null;
     }
   },
 
@@ -82,9 +104,10 @@ const messageService = {
   async getUnreadCount() {
     try {
       const response = await api.get('/messages/unread/count');
-      return response.data;
+      return response || 0;
     } catch (error) {
-      throw error;
+      console.error('Error in getUnreadCount:', error);
+      return 0;
     }
   },
 
@@ -92,9 +115,10 @@ const messageService = {
   async searchMessages(query) {
     try {
       const response = await api.get('/messages/search', { params: { q: query } });
-      return response.data;
+      return response || [];
     } catch (error) {
-      throw error;
+      console.error('Error in searchMessages:', error);
+      return [];
     }
   }
 };

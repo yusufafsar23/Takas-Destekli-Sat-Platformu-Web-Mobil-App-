@@ -1,0 +1,305 @@
+/* Mesajlaşma Container */
+.messages-container {
+  display: flex;
+  height: calc(100vh - 70px);
+  background-color: #f5f7f9;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 300px;
+  border-right: 1px solid #e1e4e8;
+  background-color: #fff;
+  overflow-y: auto;
+}
+
+.sidebar h2 {
+  padding: 20px;
+  margin: 0;
+  font-size: 18px;
+  border-bottom: 1px solid #e1e4e8;
+}
+
+/* Konuşma Listesi */
+.conversation-list {
+  overflow-y: auto;
+}
+
+.conversation-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.conversation-item {
+  display: flex;
+  padding: 15px;
+  border-bottom: 1px solid #f0f2f5;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.conversation-item:hover {
+  background-color: #f5f7f9;
+}
+
+.conversation-item.active {
+  background-color: #e7f0ff;
+}
+
+.conversation-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  margin-right: 10px;
+}
+
+.conversation-details {
+  flex: 1;
+  overflow: hidden;
+}
+
+.conversation-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+
+.conversation-name {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.conversation-time {
+  color: #888;
+  font-size: 12px;
+}
+
+.conversation-preview {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.preview-text {
+  color: #666;
+  font-size: 13px;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 200px;
+}
+
+.unread-badge {
+  background-color: #3498db;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 50%;
+  min-width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-conversations {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+/* Chat Area */
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.chat-header {
+  padding: 15px 20px;
+  border-bottom: 1px solid #e1e4e8;
+  background-color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.scroll-button {
+  background-color: #f0f2f5;
+  color: #555;
+  border: none;
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.scroll-button:hover {
+  background-color: #3498db;
+  color: white;
+}
+
+/* Mesaj içeriği container'ı - İsim çakışması düzeltildi */
+.chat-box .messages-container {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: block; /* Flex yerine block kullanılacak */
+  height: auto; /* Standart yükseklik yerine otomatik ayarlanacak */
+}
+
+.empty-chat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #888;
+}
+
+.message-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.message-date-group {
+  margin-bottom: 20px;
+}
+
+.date-divider {
+  text-align: center;
+  margin: 15px 0;
+  position: relative;
+}
+
+.date-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background-color: #e1e4e8;
+  z-index: 1;
+}
+
+.date-divider span {
+  background-color: #f5f7f9;
+  padding: 0 10px;
+  font-size: 12px;
+  color: #888;
+  position: relative;
+  z-index: 2;
+}
+
+.message-item {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.message-item.sent {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 18px;
+  position: relative;
+}
+
+.message-item.sent .message-bubble {
+  background-color: #dcf8c6;
+}
+
+.message-item.received .message-bubble {
+  background-color: #fff;
+}
+
+.message-bubble p {
+  margin: 0;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.message-time {
+  display: block;
+  font-size: 11px;
+  color: #888;
+  text-align: right;
+  margin-top: 5px;
+}
+
+.read-status {
+  margin-left: 4px;
+  color: #34b7f1;
+}
+
+.message-form {
+  display: flex;
+  padding: 10px;
+  background-color: #fff;
+  border-top: 1px solid #e1e4e8;
+}
+
+.message-input {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  outline: none;
+  font-size: 14px;
+}
+
+.send-button {
+  margin-left: 10px;
+  padding: 10px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.send-button:hover {
+  background-color: #2980b9;
+}
+
+.send-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.no-conversation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  background-color: #fff;
+  color: #888;
+  font-size: 16px;
+  text-align: center;
+  padding: 20px;
+} 

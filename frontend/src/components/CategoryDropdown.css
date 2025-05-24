@@ -1,0 +1,125 @@
+.category-dropdown {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.category-link {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  text-align: center;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.category-link:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.category-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 15px auto;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.category-title {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.subcategories-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: white;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-top: -5px;
+  border: 1px solid #eee;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.subcategory-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.subcategory-item {
+  padding: 0;
+  margin: 0;
+}
+
+.subcategory-link {
+  display: block;
+  padding: 10px 15px;
+  text-decoration: none;
+  color: #333;
+  transition: background 0.2s;
+}
+
+.subcategory-link:hover {
+  background-color: #f8f9fa;
+  color: #0d6efd;
+}
+
+.category-icon-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+@media (max-width: 768px) {
+  .subcategories-dropdown {
+    position: relative;
+    margin-top: 10px;
+    max-height: 300px;
+    border-radius: 8px;
+    border-top: 1px solid #eee;
+  }
+  
+  .category-link {
+    padding: 15px 10px;
+  }
+  
+  .category-link:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .category-link:active {
+    background-color: #f8f9fa;
+  }
+  
+  .subcategory-link {
+    padding: 15px;
+  }
+  
+  .subcategory-item:not(:last-child) {
+    border-bottom: 1px solid #f1f1f1;
+  }
+  
+  .subcategory-item:active {
+    background-color: #f0f8ff;
+  }
+} 

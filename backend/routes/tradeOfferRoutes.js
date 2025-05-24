@@ -12,18 +12,20 @@ const {
     createCounterOffer, 
     getUserTradeHistory, 
     completeTradeOffer, 
-    getSmartMatchesForProduct 
+    getSmartMatchesForProduct,
+    getMyTradeOffers 
 } = require('../controllers/tradeOfferController');
 
 const auth = require('../middleware/auth');
-const isAdmin = require('../middleware/isAdmin');
+const { authorize } = require('../middleware/authorize');
 
 // Genel route'lar (Admin için)
-router.get('/all', auth, isAdmin, getAllTradeOffers);
+router.get('/all', auth, authorize('admin'), getAllTradeOffers);
 
 // Kullanıcı takas teklifleri
 router.get('/received', auth, getReceivedTradeOffers);
 router.get('/sent', auth, getSentTradeOffers);
+router.get('/my-offers', auth, getMyTradeOffers);
 router.get('/history', auth, getUserTradeHistory);
 router.get('/user/:userId/history', auth, getUserTradeHistory);
 

@@ -14,6 +14,8 @@ const register = async (req, res) => {
     try {
         const { username, email, password, fullName, phone, address } = req.body;
 
+        console.log('Registration attempt for:', email);
+        
         // Email kontrolü
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -30,8 +32,9 @@ const register = async (req, res) => {
         const verificationToken = generateEmailVerificationToken();
         const hashedToken = hashToken(verificationToken);
 
-        // Şifre hashleme
+        // Direkt olarak hash'lenmiş şifre kullan, modelin pre-save hook'u bunu tekrar hashlemeyecek
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log('Password hash created manually');
 
         // Yeni kullanıcı oluşturma
         const user = new User({
@@ -46,13 +49,20 @@ const register = async (req, res) => {
         });
 
         await user.save();
+        console.log('User saved successfully');
 
         // E-posta doğrulama e-postası gönderme
-        await sendEmail({
-            to: email,
-            subject: 'Takas Platformu - E-posta Adresinizi Doğrulayın',
-            html: emailTemplates.verification(verificationToken, username)
-        });
+        try {
+            await sendEmail({
+                to: email,
+                subject: 'Takas Platformu - E-posta Adresinizi Doğrulayın',
+                html: emailTemplates.verification(verificationToken, username)
+            });
+            console.log('Verification email sent');
+        } catch (emailError) {
+            console.error('Error sending verification email:', emailError);
+            // E-posta gönderimi başarısız olsa bile kullanıcı kaydını tamamla
+        }
 
         // Token oluşturma
         const token = generateAuthToken(user._id, user.role);
@@ -70,6 +80,7 @@ const register = async (req, res) => {
             token
         });
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(400).json({ error: error.message });
     }
 };
@@ -209,15 +220,23 @@ const resetPassword = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password, rememberMe } = req.body;
+        
+        console.log('Login attempt:', { email, passwordLength: password ? password.length : 0 });
 
         // Kullanıcı kontrolü
         const user = await User.findOne({ email });
+        console.log('User found:', user ? 'Yes' : 'No');
+        
         if (!user) {
             return res.status(401).json({ error: 'Geçersiz email veya şifre.' });
         }
 
-        // Şifre kontrolü
-        const isMatch = await bcrypt.compare(password, user.password);
+        console.log('Stored password hash:', user.password);
+        
+        // Şifre kontrolü - Model'in comparePassword metodunu kullan
+        const isMatch = await user.comparePassword(password);
+        console.log('Password match:', isMatch);
+        
         if (!isMatch) {
             return res.status(401).json({ error: 'Geçersiz email veya şifre.' });
         }
@@ -228,6 +247,7 @@ const login = async (req, res) => {
 
         // Token oluşturma (rememberMe seçeneğine göre)
         const token = generateAuthToken(user._id, user.role, rememberMe);
+        console.log('Login successful, token generated');
 
         res.json({
             user: {
@@ -241,6 +261,7 @@ const login = async (req, res) => {
             token
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(400).json({ error: error.message });
     }
 };
