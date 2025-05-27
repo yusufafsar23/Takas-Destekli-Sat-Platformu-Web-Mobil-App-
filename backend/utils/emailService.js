@@ -71,6 +71,17 @@ const emailTemplates = {
     `;
   },
   
+  verificationCode: (code, username) => {
+    return `
+      <h1>Merhaba ${username},</h1>
+      <p>Takas Platformu'na hoş geldiniz!</p>
+      <p>Hesabınızı doğrulamak için lütfen aşağıdaki doğrulama kodunu giriniz:</p>
+      <div style="padding: 10px 15px; background-color: #f2f2f2; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 5px; margin: 20px 0; border-radius: 5px;">${code}</div>
+      <p>Bu doğrulama kodu 24 saat boyunca geçerlidir.</p>
+      <p>Teşekkürler,<br>Takas Platformu Ekibi</p>
+    `;
+  },
+  
   resetPassword: (token, username) => {
     return `
       <h1>Merhaba ${username},</h1>

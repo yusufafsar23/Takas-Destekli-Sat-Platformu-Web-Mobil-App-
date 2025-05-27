@@ -37,8 +37,8 @@ const resetPassword = async (token, newPassword) => {
 };
 
 // E-posta doğrulama
-const verifyEmail = async (token) => {
-  const response = await api.post('/users/verify-email', { token });
+const verifyEmail = async (code, email) => {
+  const response = await api.post('/users/verify-email', { code, email });
   return response.data;
 };
 

@@ -55,9 +55,9 @@ const authService = {
   },
 
   // Email doğrulama
-  async verifyEmail(token) {
+  async verifyEmail(code, email) {
     try {
-      const response = await api.post('/auth/verify-email', { token });
+      const response = await api.post('/auth/verify-email', { code, email });
       return response.data;
     } catch (error) {
       throw error;

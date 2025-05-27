@@ -1,0 +1,286 @@
+tags:
+  - name: Products
+    description: Ürün yönetimi ile ilgili işlemler
+
+/api/products:
+  get:
+    tags:
+      - Products
+    summary: Ürünleri listele
+    description: Kriterlere göre ürünleri filtreleyip listeler
+    parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Arama terimi
+      - in: query
+        name: category
+        schema:
+          type: string
+        description: Kategori ID'si
+      - in: query
+        name: subcategory
+        schema:
+          type: string
+        description: Alt kategori ID'si
+      - in: query
+        name: minPrice
+        schema:
+          type: number
+        description: Minimum fiyat
+      - in: query
+        name: maxPrice
+        schema:
+          type: number
+        description: Maksimum fiyat
+      - in: query
+        name: condition
+        schema:
+          type: string
+          enum: [Yeni, Yeni Gibi, İyi, Makul, Kötü]
+        description: Ürün durumu
+      - in: query
+        name: location
+        schema:
+          type: string
+        description: Konum bilgisi
+      - in: query
+        name: acceptsTradeOffers
+        schema:
+          type: boolean
+        description: Takas tekliflerine açık mı
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [active, sold, reserved, inactive]
+        description: Ürün durumu
+      - in: query
+        name: page
+        schema:
+          type: integer
+          default: 1
+        description: Sayfa numarası
+      - in: query
+        name: limit
+        schema:
+          type: integer
+          default: 12
+        description: Sayfa başına ürün sayısı
+      - in: query
+        name: sort
+        schema:
+          type: string
+          enum: [price_asc, price_desc, title_asc, title_desc, createdAt_desc]
+        description: Sıralama kriteri
+    responses:
+      200:
+        description: Başarılı
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                products:
+                  type: array
+                  items:
+                    type: object
+                page:
+                  type: integer
+                totalPages:
+                  type: integer
+                totalProducts:
+                  type: integer
+      500:
+        description: Sunucu hatası
+  
+  post:
+    tags:
+      - Products
+    summary: Yeni ürün oluştur
+    description: Sisteme yeni bir ürün ekler
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - description
+              - price
+              - category
+              - condition
+              - location
+            properties:
+              title:
+                type: string
+                example: "iPhone 12 Pro"
+              description:
+                type: string
+                example: "Excellent condition, barely used"
+              price:
+                type: number
+                example: 8000
+              category:
+                type: string
+                example: "60f5e4b4c2d8d51f8c1e9b45"
+              subcategory:
+                type: string
+                example: "60f5e4b4c2d8d51f8c1e9b46"
+              condition:
+                type: string
+                enum: [Yeni, Yeni Gibi, İyi, Makul, Kötü]
+                example: "İyi"
+              location:
+                type: string
+                example: "İstanbul"
+              coordinates:
+                type: object
+                properties:
+                  coordinates:
+                    type: array
+                    items:
+                      type: number
+                    example: [29.01677, 41.03389]
+              acceptsTradeOffers:
+                type: boolean
+                example: true
+              images:
+                type: array
+                items:
+                  type: string
+                  format: base64
+              tags:
+                type: array
+                items:
+                  type: string
+                example: ["smartphone", "iphone", "apple"]
+    responses:
+      201:
+        description: Ürün başarıyla oluşturuldu
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                data:
+                  type: object
+      400:
+        description: Geçersiz giriş verileri
+      401:
+        description: Yetkilendirme hatası
+
+/api/products/{id}:
+  get:
+    tags:
+      - Products
+    summary: Ürün detayı
+    description: Belirli bir ürünün detaylarını getirir
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Ürün ID'si
+    responses:
+      200:
+        description: Başarılı
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                product:
+                  type: object
+      404:
+        description: Ürün bulunamadı
+  
+  put:
+    tags:
+      - Products
+    summary: Ürün güncelle
+    description: Mevcut bir ürünü günceller
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Ürün ID'si
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              title:
+                type: string
+              description:
+                type: string
+              price:
+                type: number
+              category:
+                type: string
+              subcategory:
+                type: string
+              condition:
+                type: string
+                enum: [Yeni, Yeni Gibi, İyi, Makul, Kötü]
+              location:
+                type: string
+              coordinates:
+                type: object
+              acceptsTradeOffers:
+                type: boolean
+              images:
+                type: array
+                items:
+                  type: string
+              tags:
+                type: array
+                items:
+                  type: string
+              status:
+                type: string
+                enum: [active, sold, reserved, inactive]
+    responses:
+      200:
+        description: Ürün başarıyla güncellendi
+      400:
+        description: Geçersiz giriş verileri
+      401:
+        description: Yetkilendirme hatası
+      404:
+        description: Ürün bulunamadı
+
+  delete:
+    tags:
+      - Products
+    summary: Ürün sil
+    description: Belirli bir ürünü siler
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Ürün ID'si
+    responses:
+      200:
+        description: Ürün başarıyla silindi
+      401:
+        description: Yetkilendirme hatası
+      404:
+        description: Ürün bulunamadı 

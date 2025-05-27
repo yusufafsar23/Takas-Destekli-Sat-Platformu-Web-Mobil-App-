@@ -1,0 +1,228 @@
+tags:
+  - name: TradeOffers
+    description: Takas teklifleri ile ilgili işlemler
+
+/api/trade-offers:
+  post:
+    tags:
+      - TradeOffers
+    summary: Takas teklifi oluştur
+    description: Yeni bir takas teklifi oluşturur
+    security:
+      - bearerAuth: []
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - requestedProductId
+              - offeredProductId
+            properties:
+              requestedProductId:
+                type: string
+                description: Talep edilen ürünün ID'si
+                example: "60f5e4b4c2d8d51f8c1e9b45"
+              offeredProductId:
+                type: string
+                description: Teklif edilen ürünün ID'si
+                example: "60f5e4b4c2d8d51f8c1e9b46"
+              additionalCashOffer:
+                type: number
+                description: Ek para teklifi
+                example: 300
+              message:
+                type: string
+                description: Teklif mesajı
+                example: "Bu ürününüz için takas yapmak istiyorum."
+              specialConditions:
+                type: object
+                properties:
+                  meetupPreferred:
+                    type: boolean
+                    example: true
+                  meetupLocation:
+                    type: string
+                    example: "İstanbul, Kadıköy"
+                  shippingPreferred:
+                    type: boolean
+                    example: false
+                  shippingDetails:
+                    type: string
+                    example: "Kargo ücreti alıcıya ait"
+                  additionalNotes:
+                    type: string
+                    example: "Hafta sonu buluşabiliriz"
+    responses:
+      201:
+        description: Takas teklifi başarıyla oluşturuldu
+        content:
+          application/json:
+            schema:
+              type: object
+      400:
+        description: Geçersiz talep
+      403:
+        description: Yetkilendirme hatası
+      404:
+        description: Ürün bulunamadı
+
+/api/trade-offers/received:
+  get:
+    tags:
+      - TradeOffers
+    summary: Gelen takas tekliflerini listele
+    description: Kullanıcıya gelen takas tekliflerini listeler
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [pending, accepted, rejected, cancelled, completed]
+        description: Teklif durumu
+    responses:
+      200:
+        description: Başarılı
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+      500:
+        description: Sunucu hatası
+
+/api/trade-offers/sent:
+  get:
+    tags:
+      - TradeOffers
+    summary: Gönderilen takas tekliflerini listele
+    description: Kullanıcının gönderdiği takas tekliflerini listeler
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum: [pending, accepted, rejected, cancelled, completed]
+        description: Teklif durumu
+    responses:
+      200:
+        description: Başarılı
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+      500:
+        description: Sunucu hatası
+
+/api/trade-offers/{id}:
+  get:
+    tags:
+      - TradeOffers
+    summary: Takas teklifi detayı
+    description: Belirli bir takas teklifinin detaylarını getirir
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Takas teklifi ID'si
+    responses:
+      200:
+        description: Başarılı
+        content:
+          application/json:
+            schema:
+              type: object
+      403:
+        description: Yetkilendirme hatası
+      404:
+        description: Takas teklifi bulunamadı
+      500:
+        description: Sunucu hatası
+
+/api/trade-offers/{id}/accept:
+  put:
+    tags:
+      - TradeOffers
+    summary: Takas teklifini kabul et
+    description: Belirli bir takas teklifini kabul eder
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Takas teklifi ID'si
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              responseMessage:
+                type: string
+                example: "Teklifi kabul ediyorum."
+    responses:
+      200:
+        description: Teklif başarıyla kabul edildi
+        content:
+          application/json:
+            schema:
+              type: object
+      400:
+        description: Geçersiz talep
+      403:
+        description: Yetkilendirme hatası
+      404:
+        description: Takas teklifi bulunamadı
+
+/api/trade-offers/{id}/reject:
+  put:
+    tags:
+      - TradeOffers
+    summary: Takas teklifini reddet
+    description: Belirli bir takas teklifini reddeder
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema:
+          type: string
+        description: Takas teklifi ID'si
+    requestBody:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              responseMessage:
+                type: string
+                example: "Teklifi kabul edemiyorum."
+    responses:
+      200:
+        description: Teklif başarıyla reddedildi
+        content:
+          application/json:
+            schema:
+              type: object
+      400:
+        description: Geçersiz talep
+      403:
+        description: Yetkilendirme hatası
+      404:
+        description: Takas teklifi bulunamadı 

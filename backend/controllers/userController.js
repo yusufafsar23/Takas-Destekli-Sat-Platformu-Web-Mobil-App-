@@ -6,7 +6,8 @@ const {
   generateAuthToken, 
   generateEmailVerificationToken, 
   generatePasswordResetToken,
-  hashToken
+  hashToken,
+  generateVerificationCode
 } = require('../utils/tokenService');
 
 // Kullanıcı Kaydı
@@ -14,6 +15,8 @@ const register = async (req, res) => {
     try {
         const { username, email, password, fullName, phone, address } = req.body;
 
+        console.log('Registration attempt for:', email);
+        
         // Email kontrolü
         const existingUser = await User.findOne({ email });
         if (existingUser) {
@@ -26,12 +29,12 @@ const register = async (req, res) => {
             return res.status(400).json({ error: 'Bu kullanıcı adı zaten kullanılıyor.' });
         }
 
-        // E-posta doğrulama tokeni oluşturma
-        const verificationToken = generateEmailVerificationToken();
-        const hashedToken = hashToken(verificationToken);
+        // 6 haneli doğrulama kodu oluşturma
+        const verificationCode = generateVerificationCode();
 
-        // Şifre hashleme
+        // Direkt olarak hash'lenmiş şifre kullan, modelin pre-save hook'u bunu tekrar hashlemeyecek
         const hashedPassword = await bcrypt.hash(password, 10);
+        console.log('Password hash created manually');
 
         // Yeni kullanıcı oluşturma
         const user = new User({
@@ -41,35 +44,46 @@ const register = async (req, res) => {
             fullName,
             phone,
             address,
-            verificationToken: hashedToken,
-            verificationTokenExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 saat
+            verificationCode,
+            verificationCodeExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 saat
         });
 
         await user.save();
+        console.log('User saved successfully');
 
         // E-posta doğrulama e-postası gönderme
-        await sendEmail({
-            to: email,
-            subject: 'Takas Platformu - E-posta Adresinizi Doğrulayın',
-            html: emailTemplates.verification(verificationToken, username)
-        });
+        try {
+            await sendEmail({
+                to: email,
+                subject: 'Takas Platformu - E-posta Adresinizi Doğrulayın',
+                html: emailTemplates.verificationCode(verificationCode, username)
+            });
+            console.log('Verification email sent');
+        } catch (emailError) {
+            console.error('Error sending verification email:', emailError);
+            // E-posta gönderimi başarısız olsa bile kullanıcı kaydını tamamla
+        }
 
         // Token oluşturma
         const token = generateAuthToken(user._id, user.role);
 
         res.status(201).json({
-            message: 'Kullanıcı kaydı başarılı. Lütfen e-posta adresinizi doğrulayın.',
+            message: 'Kullanıcı kaydı başarılı. Lütfen e-posta adresinize gönderilen doğrulama kodunu giriniz.',
             user: {
                 _id: user._id,
                 username: user.username,
                 email: user.email,
                 fullName: user.fullName,
+                phone: user.phone,
+                address: user.address,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 emailVerified: user.emailVerified
             },
             token
         });
     } catch (error) {
+        console.error('Registration error:', error);
         res.status(400).json({ error: error.message });
     }
 };
@@ -77,28 +91,26 @@ const register = async (req, res) => {
 // E-posta Doğrulama
 const verifyEmail = async (req, res) => {
     try {
-        const { token } = req.body;
-        if (!token) {
-            return res.status(400).json({ error: 'Doğrulama token\'ı gereklidir.' });
+        const { code, email } = req.body;
+        if (!code || !email) {
+            return res.status(400).json({ error: 'Doğrulama kodu ve e-posta adresi gereklidir.' });
         }
 
-        // Token'ı hashle
-        const hashedToken = hashToken(token);
-
-        // Kullanıcıyı bul
+        // Kullanıcıyı e-posta ve doğrulama koduna göre bul
         const user = await User.findOne({
-            verificationToken: hashedToken,
-            verificationTokenExpiry: { $gt: Date.now() }
+            email,
+            verificationCode: code,
+            verificationCodeExpiry: { $gt: Date.now() }
         });
 
         if (!user) {
-            return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş token.' });
+            return res.status(400).json({ error: 'Geçersiz veya süresi dolmuş doğrulama kodu.' });
         }
 
         // Kullanıcı bilgilerini güncelle
         user.emailVerified = true;
-        user.verificationToken = undefined;
-        user.verificationTokenExpiry = undefined;
+        user.verificationCode = undefined;
+        user.verificationCodeExpiry = undefined;
         await user.save();
 
         // Hoş geldiniz e-postası gönder
@@ -118,6 +130,9 @@ const verifyEmail = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 fullName: user.fullName,
+                phone: user.phone,
+                address: user.address,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 emailVerified: user.emailVerified
             },
@@ -209,15 +224,23 @@ const resetPassword = async (req, res) => {
 const login = async (req, res) => {
     try {
         const { email, password, rememberMe } = req.body;
+        
+        console.log('Login attempt:', { email, passwordLength: password ? password.length : 0 });
 
         // Kullanıcı kontrolü
         const user = await User.findOne({ email });
+        console.log('User found:', user ? 'Yes' : 'No');
+        
         if (!user) {
             return res.status(401).json({ error: 'Geçersiz email veya şifre.' });
         }
 
-        // Şifre kontrolü
-        const isMatch = await bcrypt.compare(password, user.password);
+        console.log('Stored password hash:', user.password);
+        
+        // Şifre kontrolü - Model'in comparePassword metodunu kullan
+        const isMatch = await user.comparePassword(password);
+        console.log('Password match:', isMatch);
+        
         if (!isMatch) {
             return res.status(401).json({ error: 'Geçersiz email veya şifre.' });
         }
@@ -228,6 +251,7 @@ const login = async (req, res) => {
 
         // Token oluşturma (rememberMe seçeneğine göre)
         const token = generateAuthToken(user._id, user.role, rememberMe);
+        console.log('Login successful, token generated');
 
         res.json({
             user: {
@@ -235,12 +259,16 @@ const login = async (req, res) => {
                 username: user.username,
                 email: user.email,
                 fullName: user.fullName,
+                phone: user.phone,
+                address: user.address,
+                profilePicture: user.profilePicture,
                 role: user.role,
                 emailVerified: user.emailVerified
             },
             token
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(400).json({ error: error.message });
     }
 };

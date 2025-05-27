@@ -1,9 +1,43 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { createError } = require('./errorHandler');
 
-// Disk yerine belleğe kaydetme (Cloudinary'ye yüklemek için)
-const storage = multer.memoryStorage();
+// Dosyaları yüklemek için uploads klasörünün doğru yolu
+const UPLOADS_DIR = path.join(__dirname, '..', '..', 'frontend', 'public', 'uploads');
+const PRODUCTS_DIR = path.join(UPLOADS_DIR, 'products');
+
+// Klasörlerin varlığını kontrol et ve oluştur
+const ensureDirectoriesExist = () => {
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+    console.log('Created uploads directory');
+  }
+  
+  if (!fs.existsSync(PRODUCTS_DIR)) {
+    fs.mkdirSync(PRODUCTS_DIR, { recursive: true });
+    console.log('Created products uploads directory');
+  }
+};
+
+// Klasörleri oluştur
+ensureDirectoriesExist();
+
+// Bellek depolama stratejisi (FormData için) - Cloudinary ve local storage seçenekleri
+const memoryStorage = multer.memoryStorage();
+
+// Disk depolama stratejisi (doğrudan dosya sistemine kaydetmek için)
+const diskStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, PRODUCTS_DIR);
+  },
+  filename: (req, file, cb) => {
+    // Güvenli dosya adı oluştur
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, uniqueSuffix + ext);
+  }
+});
 
 // Dosya filtresi (sadece resim dosyalarını kabul etmek için)
 const fileFilter = (req, file, cb) => {
@@ -31,9 +65,9 @@ const limits = {
   files: 10 // Tek seferde maximum 10 dosya
 };
 
-// Tek resim yükleme için middleware
-const uploadSingleImage = multer({
-  storage,
+// Tek resim yükleme için memory middleware
+const uploadSingleImageMemory = multer({
+  storage: memoryStorage,
   fileFilter,
   limits: {
     ...limits,
@@ -41,16 +75,33 @@ const uploadSingleImage = multer({
   }
 }).single('image');
 
-// Çoklu resim yükleme için middleware
-const uploadMultipleImages = multer({
-  storage,
+// Çoklu resim yükleme için memory middleware
+const uploadMultipleImagesMemory = multer({
+  storage: memoryStorage,
+  fileFilter,
+  limits
+}).array('images', 10);
+
+// Tek resim yükleme için disk middleware
+const uploadSingleImageDisk = multer({
+  storage: diskStorage,
+  fileFilter,
+  limits: {
+    ...limits,
+    files: 1
+  }
+}).single('image');
+
+// Çoklu resim yükleme için disk middleware
+const uploadMultipleImagesDisk = multer({
+  storage: diskStorage,
   fileFilter,
   limits
 }).array('images', 10);
 
 // Tek resim yükleme için Express middleware wrapper
 const singleUpload = (req, res, next) => {
-  uploadSingleImage(req, res, (err) => {
+  uploadSingleImageMemory(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
         // Multer hatası
@@ -70,7 +121,7 @@ const singleUpload = (req, res, next) => {
 
 // Çoklu resim yükleme için Express middleware wrapper
 const multipleUpload = (req, res, next) => {
-  uploadMultipleImages(req, res, (err) => {
+  uploadMultipleImagesMemory(req, res, (err) => {
     if (err) {
       if (err instanceof multer.MulterError) {
         // Multer hatası
@@ -91,7 +142,54 @@ const multipleUpload = (req, res, next) => {
   });
 };
 
+// Disk'e doğrudan yükleme için Express middleware wrapper
+const singleUploadDisk = (req, res, next) => {
+  uploadSingleImageDisk(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Dosya yükleme hatası: ${err.message}` });
+      }
+      return res.status(err.statusCode || 400).json({ error: err.message });
+    }
+    
+    // Dosya URL'sini ekle
+    if (req.file) {
+      req.file.url = `/uploads/products/${req.file.filename}`;
+    }
+    
+    next();
+  });
+};
+
+// Disk'e doğrudan çoklu yükleme için Express middleware wrapper
+const multipleUploadDisk = (req, res, next) => {
+  uploadMultipleImagesDisk(req, res, (err) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        return res.status(400).json({ error: `Dosya yükleme hatası: ${err.message}` });
+      }
+      return res.status(err.statusCode || 400).json({ error: err.message });
+    }
+    
+    // Dosya URL'lerini ekle
+    if (req.files && req.files.length > 0) {
+      console.log(`Upload successful: ${req.files.length} files uploaded`);
+      
+      req.files.forEach((file, index) => {
+        file.url = `/uploads/products/${file.filename}`;
+        console.log(`File ${index + 1}: ${file.filename}, URL: ${file.url}`);
+      });
+    } else {
+      console.log('No files uploaded with multipleUploadDisk middleware');
+    }
+    
+    next();
+  });
+};
+
 module.exports = {
   singleUpload,
-  multipleUpload
+  multipleUpload,
+  singleUploadDisk,
+  multipleUploadDisk
 }; 

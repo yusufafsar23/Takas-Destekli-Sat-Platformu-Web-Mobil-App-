@@ -43,6 +43,14 @@ const generateEmailVerificationToken = () => {
 };
 
 /**
+ * E-posta doğrulama kodu oluşturma (6 haneli)
+ * @returns {string} 6 haneli doğrulama kodu
+ */
+const generateVerificationCode = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+/**
  * Şifre sıfırlama token'ı oluşturma
  * @returns {string} Oluşturulan token
  */
@@ -67,5 +75,6 @@ module.exports = {
   verifyAuthToken,
   generateEmailVerificationToken,
   generatePasswordResetToken,
+  generateVerificationCode,
   hashToken
 }; 

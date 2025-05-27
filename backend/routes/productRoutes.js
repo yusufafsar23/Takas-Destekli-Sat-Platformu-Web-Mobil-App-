@@ -12,13 +12,14 @@ const {
     getUserProducts
 } = require('../controllers/productController');
 const auth = require('../middleware/auth');
-const { singleUpload, multipleUpload } = require('../middleware/uploadMiddleware');
+const { multipleUpload, multipleUploadDisk } = require('../middleware/uploadMiddleware');
 
 // Halka açık rotalar
 router.get('/', getProducts);
 router.get('/featured', getFeaturedProducts);
 router.get('/slug/:slug', getProductBySlug);
-router.get('/user/:userId', getUserProducts);
+// Kullanıcı ürünleri artık korumalı
+router.get('/user/:userId', auth, getUserProducts);
 router.get('/:id', getProduct);
 
 // Koruma gerektiren rotalar
