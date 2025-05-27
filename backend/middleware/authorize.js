@@ -59,26 +59,8 @@ const checkPermission = (permission) => {
  */
 const checkEmailVerified = () => {
   return (req, res, next) => {
-    // Kullanıcının olup olmadığını kontrol et
-    if (!req.user) {
-      return res.status(401).json({
-        error: 'Kimlik doğrulama gerekli'
-      });
-    }
-
-    // Admin kullanıcılara her zaman izin ver
-    if (req.user.role === 'admin') {
-      return next();
-    }
-
-    // E-posta onayı kontrolü
-    if (!req.user.emailVerified) {
-      return res.status(403).json({
-        error: 'Bu işlemi gerçekleştirmek için e-posta adresinizi doğrulamanız gerekmektedir'
-      });
-    }
-
-    // E-posta doğrulandı, bir sonraki işleme geç
+    // Her zaman doğrulanmış kabul et ve bir sonraki işleme geç
+    // Email doğrulama kontrolü kaldırıldı
     next();
   };
 };

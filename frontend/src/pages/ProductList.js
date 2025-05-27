@@ -28,28 +28,28 @@ const STATIC_CATEGORIES = [
     id: 3, 
     name: 'Ev Eşyaları', 
     icon: 'home',
-    mongoId: '64f1b3c68d7c4a281d66e8b5',
+    mongoId: '68137ab0358c748f63723fce',
     count: 85,
   },
   { 
     id: 4, 
     name: 'Spor ve Outdoor', 
     icon: 'football', 
-    mongoId: '64f1b3c68d7c4a281d66e8b6',
+    mongoId: '68137ab0358c748f63723fd3',
     count: 65,
   },
   { 
     id: 5, 
-    name: 'Hobi ve Oyun', 
+    name: 'Oyun & Konsol', 
     icon: 'game-controller', 
-    mongoId: '64f1b3c68d7c4a281d66e8b7',
+    mongoId: '68137ab0358c748f63723fd6',
     count: 40,
   },
   { 
     id: 6, 
-    name: 'Kitap, Film, Müzik', 
+    name: 'Kitap & Hobi', 
     icon: 'book',
-    mongoId: '64f1b3c68d7c4a281d66e8b8',
+    mongoId: '68137ab0358c748f63723fd8',
     count: 95,
   }
 ];
@@ -59,7 +59,7 @@ const SUBCATEGORIES = {
   // Ana kategori ID -> Alt kategori MongoDB ID'leri
   '1': ['68137ab2358c748f63723fe6', '68137ab2358c748f63723fe4', '68137ab2358c748f63723fe7', '68137ab2358c748f63723fe8'], // Elektronik alt kategorileri: Bilgisayarlar, Telefonlar, Televizyonlar, Ses Sistemleri
   '2': ['68137ab0358c748f63723fcd', '68137ab1358c748f63723fd0', '68137ab1358c748f63723fd7', '68137ab1358c748f63723fd9'], // Giyim alt kategorileri: Kadın giyim, Erkek giyim, Çocuk giyim, Ayakkabı ve çanta
-  '3': ['68137ab1358c748f63723fd1', '68137ab1358c748f63723fd4', '68137ab1358c748f63723fd6', '68137ab1358c748f63723fd2'], // Ev Eşyaları alt kategorileri: Mobilya, Mutfak, Yatak ve banyo, Dekorasyon
+  '3': ['68137ab1358c748f63723fd1', '68137ab1358c748f63723fd4', '68137ab1358c748f63723fd6', '68137ab4358c748f63723ff6'], // Ev Eşyaları alt kategorileri: Mobilya, Mutfak, Yatak ve banyo, Dekorasyon
   '4': ['68137ab1358c748f63723fd3', '68137ab0358c748f63723fcc', '68137ab0358c748f63723fcf', '68137ab1358c748f63723fd5'], // Spor ve Outdoor alt kategorileri
   '5': ['68137ab0358c748f63723fca', '68137ab0358c748f63723fcb', '68137ab0358c748f63723fce'], // Hobi ve Oyun alt kategorileri: Konsollar, Oyunlar, Aksesuarlar
   '6': ['68137aaf358c748f63723fc9', '68137ab0358c748f63723fcd', '68137ab0358c748f63723fce', '68137aaf358c748f63723fca'], // Kitap, Film, Müzik alt kategorileri: Kitaplar, Müzik ve film, Koleksiyon, El işi
@@ -120,7 +120,7 @@ const CATEGORY_NAME_MAPPING = {
   'Ev Eşyaları': ['ev', 'mobilya', 'dekorasyon', 'mutfak'],
   'Giyim': ['giyim', 'kıyafet', 'elbise', 'ayakkabı', 'ayakkabılar', 'çanta'],
   'Kitap & Hobi': ['kitap', 'hobi', 'dergi', 'oyuncak'],
-  'Spor': ['spor', 'fitness', 'bisiklet', 'futbol'],
+  'Spor ve Outdoor': ['spor', 'fitness', 'bisiklet', 'futbol'],
   'Oyun & Konsol': ['oyun', 'konsol', 'ps4', 'xbox', 'playstation', 'nintendo']
 };
 
@@ -138,6 +138,31 @@ const GIYIM_CATEGORIES = [
   '68137ab3358c748f63723fee',
   '68137ab3358c748f63723ff0',
   '68137ab3358c748f63723ff2'
+];
+
+// Ev Eşyaları kategorisi alt kategorileri - Ana kategori ID: 68137ab0358c748f63723fce
+const EV_ESYALARI_CATEGORIES = [
+  '68137ab0358c748f63723fce',
+  '68137ab4358c748f63723ff6',
+  '68137ab4358c748f63723ff8',
+  '68137ab4358c748f63723ffa',
+  '68137ab5358c748f63723ffc',
+// Ana kategori ID'sinin kendisi
+];
+
+// Spor ve Outdoor kategorisi alt kategorileri - Ana kategori ID: 68137ab0358c748f63723fd3
+const SPOR_CATEGORIES = [
+  '68137ab0358c748f63723fd3' // Ana kategori ID'sinin kendisi
+];
+
+// Oyun & Konsol kategorisi alt kategorileri - Ana kategori ID: 68137ab0358c748f63723fd6
+const OYUN_KONSOL_CATEGORIES = [
+  '68137ab0358c748f63723fd6' // Ana kategori ID'sinin kendisi
+];
+
+// Kitap & Hobi kategorisi alt kategorileri - Ana kategori ID: 68137ab0358c748f63723fd8
+const KITAP_HOBI_CATEGORIES = [
+  '68137ab0358c748f63723fd8' // Ana kategori ID'sinin kendisi
 ];
 
 // MongoDB ID ile sabit ID eşleme fonksiyonu (geliştirilmiş)
@@ -414,6 +439,38 @@ const ProductList = () => {
             // Giyim alt kategorileri için filtreleme (belirli ID'ler)
             params.categoryIds = GIYIM_CATEGORIES.join(',');
             console.log(`📋 Yüklenecek giyim alt kategorileri: ${params.categoryIds}`);
+          }
+          // Ev Eşyaları kategorisi seçildiğinde (ID=3)
+          else if (selectedCategory === '3') {
+            console.log("🏠 Ev Eşyaları kategorisi seçildi");
+            
+            // Ana kategori ID'si ile filtreleme
+            params.categoryIds = EV_ESYALARI_CATEGORIES.join(',');
+            console.log(`📋 Ev Eşyaları kategorisi ID: ${params.categoryIds}`);
+          }
+          // Spor ve Outdoor kategorisi seçildiğinde (ID=4)
+          else if (selectedCategory === '4') {
+            console.log("🏀 Spor ve Outdoor kategorisi seçildi");
+            
+            // Ana kategori ID'si ile filtreleme
+            params.categoryIds = SPOR_CATEGORIES.join(',');
+            console.log(`📋 Spor ve Outdoor kategorisi ID: ${params.categoryIds}`);
+          }
+          // Oyun & Konsol kategorisi seçildiğinde (ID=5)
+          else if (selectedCategory === '5') {
+            console.log("🎮 Oyun & Konsol kategorisi seçildi");
+            
+            // Ana kategori ID'si ile filtreleme
+            params.categoryIds = OYUN_KONSOL_CATEGORIES.join(',');
+            console.log(`📋 Oyun & Konsol kategorisi ID: ${params.categoryIds}`);
+          }
+          // Kitap & Hobi kategorisi seçildiğinde (ID=6)
+          else if (selectedCategory === '6') {
+            console.log("📚 Kitap & Hobi kategorisi seçildi");
+            
+            // Ana kategori ID'si ile filtreleme
+            params.categoryIds = KITAP_HOBI_CATEGORIES.join(',');
+            console.log(`📋 Kitap & Hobi kategorisi ID: ${params.categoryIds}`);
           }
           // Diğer kategorilerde normal davran
           else {

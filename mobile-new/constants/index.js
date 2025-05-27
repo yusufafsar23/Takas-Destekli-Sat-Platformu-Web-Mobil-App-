@@ -13,10 +13,7 @@ export const CATEGORIES = [
   { id: '3', name: 'Oyuncak', icon: 'toys' },
   { id: '4', name: 'Kitap', icon: 'book' },
   { id: '5', name: 'Oyun', icon: 'videogame-asset' },
-  { id: '6', name: 'Oyun Konsolu', icon: 'gamepad' },
-  { id: '7', name: 'Giyim', icon: 'checkroom' },
-  { id: '8', name: 'Ev Eşyaları', icon: 'chair' },
-  { id: '9', name: 'Diğer', icon: 'more-horiz' },
+  { id: '6', name: 'Oyun Konsolu', icon: 'gamepad' }
 ];
 
 // Durum sabitleri

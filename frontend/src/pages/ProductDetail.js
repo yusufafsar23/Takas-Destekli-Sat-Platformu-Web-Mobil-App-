@@ -23,8 +23,14 @@ const getImageUrl = (image) => {
       console.log("Found image.url:", image.url);
       
       // /uploads/ ile başlıyorsa, önbellek sorununu önlemek için timestamp ekle
-      if (image.url.startsWith('/uploads/')) {
-        const imageUrl = `${image.url}?t=${new Date().getTime()}`;
+      if (image.url.startsWith('/uploads/') || image.url.includes('/products/')) {
+        // Önceki timestamp'i kaldır (eğer varsa)
+        let cleanUrl = image.url;
+        if (cleanUrl.includes('?t=')) {
+          cleanUrl = cleanUrl.split('?t=')[0];
+        }
+        
+        const imageUrl = `${cleanUrl}?t=${new Date().getTime()}`;
         console.log("Added timestamp to URL:", imageUrl);
         return imageUrl;
       }
@@ -40,15 +46,63 @@ const getImageUrl = (image) => {
     
     // Doğrudan filename varsa
     if (image.filename) {
+      // Eğer filename zaten tam bir URL ise
+      if (image.filename.startsWith('/') || image.filename.startsWith('http')) {
+        // Önceki timestamp'i kaldır (eğer varsa)
+        let cleanUrl = image.filename;
+        if (cleanUrl.includes('?t=')) {
+          cleanUrl = cleanUrl.split('?t=')[0];
+        }
+        
+        const imageUrl = `${cleanUrl}?t=${new Date().getTime()}`;
+        console.log("Using filename as URL with timestamp:", imageUrl);
+        return imageUrl;
+      }
+      
+      // Filename sadece dosya adıysa, yolu ekle
       const imageUrl = `/uploads/products/${image.filename}?t=${new Date().getTime()}`;
       console.log("Created URL from filename:", imageUrl);
       return imageUrl;
+    }
+    
+    // MongoDB dökümanı olabilir, tüm alanları kontrol et
+    if (image._id || image.id) {
+      console.log("Checking all fields of MongoDB document");
+      
+      // Tüm özellikleri kontrol et
+      for (const key in image) {
+        const value = image[key];
+        if (typeof value === 'string' && 
+            (value.includes('/uploads/') || 
+             value.includes('.jpg') || 
+             value.includes('.png') || 
+             value.includes('.jpeg') || 
+             value.includes('.gif'))) {
+          console.log(`Found image URL in field ${key}:`, value);
+          
+          // Önbellek sorununu önlemek için timestamp ekle
+          if (value.includes('/uploads/') || value.includes('/products/')) {
+            // Önceki timestamp'i kaldır (eğer varsa)
+            let cleanUrl = value;
+            if (cleanUrl.includes('?t=')) {
+              cleanUrl = cleanUrl.split('?t=')[0];
+            }
+            
+            return `${cleanUrl}?t=${new Date().getTime()}`;
+          }
+          
+          return value;
+        }
+      }
     }
     
     // Array olarak gelirse ilk elemana bakılır
     if (Array.isArray(image) && image.length > 0) {
       return getImageUrl(image[0]); // Özyinelemeli olarak ilk elemanı işle
     }
+    
+    // Nesnenin içeriğini logla
+    console.log("Image object content:", JSON.stringify(image));
   }
   
   // Eğer string ise
@@ -62,15 +116,34 @@ const getImageUrl = (image) => {
     }
     
     // /uploads/ ile başlayan dosya yolu - önbellek sorununu önlemek için timestamp ekle
-    if (image.startsWith('/uploads/')) {
+    if (image.startsWith('/uploads/') || image.includes('/products/')) {
       console.log("Found uploads path:", image);
-      const imageUrl = `${image}?t=${new Date().getTime()}`;
+      
+      // Önceki timestamp'i kaldır (eğer varsa)
+      let cleanUrl = image;
+      if (cleanUrl.includes('?t=')) {
+        cleanUrl = cleanUrl.split('?t=')[0];
+      }
+      
+      const imageUrl = `${cleanUrl}?t=${new Date().getTime()}`;
       console.log("Added timestamp to URL:", imageUrl);
       return imageUrl;
     }
     
     // Sadece dosya adı olabilir
     if (image.includes('.jpg') || image.includes('.png') || image.includes('.jpeg') || image.includes('.gif')) {
+      // Eğer zaten / ile başlıyorsa tam yol olarak kabul et
+      if (image.startsWith('/')) {
+        // Önceki timestamp'i kaldır (eğer varsa)
+        let cleanUrl = image;
+        if (cleanUrl.includes('?t=')) {
+          cleanUrl = cleanUrl.split('?t=')[0];
+        }
+        
+        const imageUrl = `${cleanUrl}?t=${new Date().getTime()}`;
+        return imageUrl;
+      }
+      
       const imageUrl = `/uploads/products/${image}?t=${new Date().getTime()}`;
       console.log("Created URL from filename string:", imageUrl);
       return imageUrl;
@@ -79,7 +152,14 @@ const getImageUrl = (image) => {
     // Herhangi bir dosya yolu (/) ile başlıyorsa
     if (image.startsWith('/')) {
       console.log("Found path starting with /:", image);
-      return image;
+      
+      // Önceki timestamp'i kaldır (eğer varsa)
+      let cleanUrl = image;
+      if (cleanUrl.includes('?t=')) {
+        cleanUrl = cleanUrl.split('?t=')[0];
+      }
+      
+      return `${cleanUrl}?t=${new Date().getTime()}`;
     }
     
     // Diğer herhangi bir string
@@ -275,20 +355,60 @@ const ProductDetail = () => {
       fetchMyProducts();
       
       // Kategorileri getir
-      const fetchCategories = async () => {
+      const fetchCategories = async (retryCount = 0) => {
         try {
+          console.log('Kategoriler yükleniyor...');
           const response = await categoryService.getAllCategories();
           let categoriesData = [];
           
-          if (response?.data) {
+          if (response?.data?.data) {
+            categoriesData = response.data.data;
+          } else if (response?.data) {
             categoriesData = response.data;
           } else if (Array.isArray(response)) {
             categoriesData = response;
           }
           
-          setCategories(categoriesData);
+          if (categoriesData.length > 0) {
+            console.log(`${categoriesData.length} kategori başarıyla yüklendi`);
+            setCategories(categoriesData);
+          } else {
+            console.error('Kategori verisi boş veya geçersiz format:', response);
+            
+            // Kategoriler boş ise ve bu ilk deneme ise, yeniden dene
+            if (retryCount < 2) {
+              console.log(`Kategoriler boş geldi, ${retryCount + 1}. deneme yapılıyor...`);
+              setTimeout(() => fetchCategories(retryCount + 1), 1500);
+            } else {
+              // Tüm denemeler başarısız olduysa varsayılan kategorileri kullan
+              setCategories([
+                { _id: '1', name: 'Elektronik' },
+                { _id: '2', name: 'Ev Eşyaları' },
+                { _id: '3', name: 'Giyim' },
+                { _id: '4', name: 'Kitap & Hobi' },
+                { _id: '5', name: 'Spor' },
+                { _id: '6', name: 'Oyun & Konsol' }
+              ]);
+            }
+          }
         } catch (err) {
           console.error('Kategoriler yüklenirken hata oluştu:', err);
+          
+          // Hata durumunda yeniden deneme
+          if (retryCount < 2) {
+            console.log(`Kategori yükleme hatası, ${retryCount + 1}. deneme yapılıyor...`);
+            setTimeout(() => fetchCategories(retryCount + 1), 1500);
+          } else {
+            // Tüm denemeler başarısız olduysa varsayılan kategorileri kullan
+            setCategories([
+              { _id: '1', name: 'Elektronik' },
+              { _id: '2', name: 'Ev Eşyaları' },
+              { _id: '3', name: 'Giyim' },
+              { _id: '4', name: 'Kitap & Hobi' },
+              { _id: '5', name: 'Spor' },
+              { _id: '6', name: 'Oyun & Konsol' }
+            ]);
+          }
         }
       };
       
@@ -576,7 +696,7 @@ const ProductDetail = () => {
   
   if (product.images && product.images.length > 0) {
     // Tüm resimleri işle
-    productImages = product.images.map(image => {
+    productImages = product.images.map((image, index) => {
       try {
         let imageUrl;
         
@@ -584,29 +704,71 @@ const ProductDetail = () => {
         if (typeof image === 'string') {
           // String format (doğrudan URL)
           imageUrl = image;
-          console.log("Using string URL:", imageUrl);
+          console.log(`Image ${index} is string URL:`, imageUrl);
         } 
         else if (typeof image === 'object' && image !== null) {
           // Object format - URL veya filename özelliğini kullan
           if (image.url) {
             imageUrl = image.url;
-            console.log("Using object.url:", imageUrl);
+            console.log(`Image ${index} has object.url:`, imageUrl);
           }
           else if (image.filename) {
-            imageUrl = `/uploads/products/${image.filename}`;
-            console.log("Using filename:", imageUrl);
+            // Eğer tam URL değilse, /uploads/products/ önekini ekle
+            if (!image.filename.startsWith('/') && !image.filename.startsWith('http')) {
+              imageUrl = `/uploads/products/${image.filename}`;
+            } else {
+              imageUrl = image.filename;
+            }
+            console.log(`Image ${index} using filename:`, imageUrl);
+          }
+          
+          // URL yoksa ve image bir string değilse, JSON.stringify ile içeriğini logla
+          if (!imageUrl) {
+            console.log(`Image ${index} object content:`, JSON.stringify(image));
+            
+            // _id veya id varsa bu bir MongoDB dökümanı olabilir, tüm alanları kontrol et
+            if (image._id || image.id) {
+              console.log(`Image ${index} is a MongoDB document, checking all fields`);
+              
+              // Tüm özellikleri kontrol et
+              for (const key in image) {
+                const value = image[key];
+                if (typeof value === 'string' && 
+                    (value.includes('/uploads/') || 
+                     value.includes('.jpg') || 
+                     value.includes('.png') || 
+                     value.includes('.jpeg') || 
+                     value.includes('.gif'))) {
+                  imageUrl = value;
+                  console.log(`Found image URL in field ${key}:`, imageUrl);
+                  break;
+                }
+              }
+            }
           }
         }
         
         // /uploads/ klasöründeki dosyalar için zaman damgası ekle
-        if (imageUrl && imageUrl.includes('/uploads/')) {
-          imageUrl = `${imageUrl}?t=${Date.now()}`;
-          console.log("Added timestamp to URL:", imageUrl);
+        if (imageUrl && (imageUrl.includes('/uploads/') || imageUrl.includes('/products/'))) {
+          // Önceki timestamp'i kaldır (eğer varsa)
+          if (imageUrl.includes('?t=')) {
+            imageUrl = imageUrl.split('?t=')[0];
+          }
+          
+          // Yeni timestamp ekle
+          imageUrl = `${imageUrl}?t=${Date.now() + index}`; // Her resim için farklı timestamp
+          console.log(`Added timestamp to URL for image ${index}:`, imageUrl);
         }
         
-        return imageUrl || placeholderImage;
+        // URL hala yoksa placeholder kullan
+        if (!imageUrl) {
+          console.warn(`Could not extract image URL for image ${index}, using placeholder`);
+          return placeholderImage;
+        }
+        
+        return imageUrl;
       } catch (err) {
-        console.error("Error processing image:", err);
+        console.error(`Error processing image ${index}:`, err);
         return placeholderImage;
       }
     });
@@ -614,15 +776,20 @@ const ProductDetail = () => {
     // En az bir resim yoksa placeholder ekle
     if (productImages.length === 0) {
       productImages.push(placeholderImage);
+      console.log("No valid images found, using placeholder");
     }
+    
+    // Resimlerin benzersiz olduğundan emin ol
+    productImages = [...new Set(productImages)];
     
     // Ana resim
     productImageUrl = productImages[activeImageIndex] || productImages[0] || placeholderImage;
+    console.log("Selected main image URL:", productImageUrl);
   } else {
     // Resim yoksa kategori placeholder'ı
     productImageUrl = placeholderImage;
     productImages.push(placeholderImage);
-    console.log("Using placeholder image:", productImageUrl);
+    console.log("No images available, using placeholder:", productImageUrl);
   }
   
   // Resim değiştirme fonksiyonu
@@ -685,8 +852,8 @@ const ProductDetail = () => {
               )}
               
               {/* Resim Navigasyon Okları */}
-              {productImages.length > 1 && !isZoomed && (
-                <div className="image-navigation">
+              {productImages.length > 1 && (
+                <div className={`image-navigation ${isZoomed ? 'zoomed' : ''}`}>
                   <button 
                     className="image-nav-button" 
                     onClick={handlePrevImage}
@@ -745,8 +912,91 @@ const ProductDetail = () => {
           
           <div className="product-description mb-4">
             <h5>Ürün Açıklaması</h5>
-            <p>{product.description || 'Ürün açıklaması bulunmuyor.'}</p>
+            <p style={{ whiteSpace: 'pre-wrap', overflow: 'visible', maxHeight: 'none' }}>{product.description || 'Ürün açıklaması bulunmuyor.'}</p>
           </div>
+          
+          {/* Ürün Özellikleri Bölümü */}
+          {product.attributes && Object.keys(product.attributes).length > 0 && (
+            <div className="product-attributes mb-4">
+              <h5>📋 Ürün Özellikleri</h5>
+              <Card className="border-0 bg-light">
+                <Card.Body>
+                  <Row>
+                    {Object.entries(product.attributes).map(([key, value], index) => {
+                      // Boş değerleri atla
+                      if (!value || value === '' || value === null || value === undefined) {
+                        return null;
+                      }
+                      
+                      // Özellik adını Türkçe'ye çevir
+                      const getAttributeLabel = (key) => {
+                        const attributeLabels = {
+                          'storage': 'Hafıza',
+                          'ram': 'RAM',
+                          'battery_health': 'Batarya Sağlığı',
+                          'has_warranty': 'Garanti',
+                          'is_original': 'Orijinallik',
+                          'hygiene_status': 'Hijyen Durumu',
+                          'cleanliness': 'Temizlik Durumu',
+                          'is_handmade': 'El Yapımı',
+                          'product_type': 'Ürün Tipi',
+                          'release_year': 'Baskı Yılı',
+                          'is_rare': 'Nadirlik',
+                          'usage_duration': 'Kullanım Süresi',
+                          'material_quality': 'Malzeme Kalitesi',
+                          'piece_count': 'Parça Sayısı',
+                          'channel_count': 'Kanal Sayısı',
+                          'connection_type': 'Bağlantı Tipi',
+                          'screen_size': 'Ekran Boyutu',
+                          'is_smart': 'Smart TV',
+                          'has_remote': 'Kumanda',
+                          'fabric_type': 'Kumaş Türü',
+                          'brand': 'Marka',
+                          'model': 'Model',
+                          'year': 'Yıl',
+                          'color': 'Renk',
+                          'size': 'Beden/Boyut',
+                          'material': 'Malzeme'
+                        };
+                        return attributeLabels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                      };
+                      
+                      // Değeri formatla
+                      const formatAttributeValue = (key, value) => {
+                        if (key === 'battery_health') {
+                          return `%${value}`;
+                        } else if (key === 'storage') {
+                          return `${value} GB`;
+                        } else if (key === 'ram') {
+                          return `${value} GB`;
+                        } else if (key === 'screen_size') {
+                          return `${value} inch`;
+                        } else if (key === 'usage_duration') {
+                          return `${value} yıl`;
+                        } else if (key === 'piece_count') {
+                          return `${value} adet`;
+                        } else if (key === 'has_warranty' || key === 'is_original' || key === 'is_handmade' || key === 'is_smart' || key === 'has_remote') {
+                          return value === true || value === 'true' || value === 'Var' || value === 'Evet' ? 'Evet' : 'Hayır';
+                        } else if (key === 'release_year' || key === 'year') {
+                          return value;
+                        }
+                        return value;
+                      };
+                      
+                      return (
+                        <Col md={6} key={index} className="mb-2">
+                          <div className="d-flex justify-content-between align-items-center">
+                            <span className="text-muted">{getAttributeLabel(key)}:</span>
+                            <span className="fw-bold">{formatAttributeValue(key, value)}</span>
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Card.Body>
+              </Card>
+            </div>
+          )}
           
           <div className="seller-info mb-4">
             <h5>Satıcı Bilgileri</h5>

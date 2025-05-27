@@ -117,34 +117,31 @@ const ProfileEditScreen = ({ route, navigation }) => {
       
       // Prepare user data for update
       const userData = {
-        name: fullName,
+        name: formData.name,
+        surname: formData.surname,
         phone: formData.phone,
         bio: formData.bio
       };
       
       console.log('Attempting to update profile with data:', userData);
       
-      // Call API to update user data
+      // Call API to update user data - await kullan
       const response = await authService.updateUserProfile(userData);
       console.log('Profile update response:', response);
       
-      // Her durumda başarılı olarak kabul et
-      const success = response?.success !== false;
-      
-      if (success) {
-        // Update local storage
-        const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
-          const parsedUser = JSON.parse(storedUser);
-          const updatedUser = { ...parsedUser, ...userData };
-          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-          console.log('User data updated in AsyncStorage');
-        }
-        
+      if (response && response.success) {
         Alert.alert('Başarılı', 'Profil bilgileriniz güncellendi', [
           { 
             text: 'Tamam', 
-            onPress: () => navigation.goBack() 
+            onPress: () => {
+              // Profil ekranına geri dön
+              navigation.goBack();
+              
+              // Kullanıcı verilerini yeniden yükle (opsiyonel)
+              authService.getCurrentUser().catch(err => 
+                console.error('Kullanıcı bilgileri yenilenemedi:', err)
+              );
+            } 
           }
         ]);
       } else {

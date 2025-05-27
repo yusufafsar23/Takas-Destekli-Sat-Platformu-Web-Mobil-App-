@@ -13,9 +13,10 @@ const {
 // Kullanıcı Kaydı
 const register = async (req, res) => {
     try {
-        const { username, email, password, fullName, phone, address } = req.body;
+        const { username, email, password, fullName, phone, address = '' } = req.body;
 
         console.log('Registration attempt for:', email);
+        console.log('Request body:', req.body);
         
         // Email kontrolü
         const existingUser = await User.findOne({ email });

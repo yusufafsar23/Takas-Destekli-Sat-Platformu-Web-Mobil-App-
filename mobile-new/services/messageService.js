@@ -32,6 +32,12 @@ const ensureValidToken = async () => {
       // Set the token
       try {
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        // Ayrıca doğrudan axios instance'ına da ekleyelim
+        if (api.defaults.headers) {
+          api.defaults.headers['Authorization'] = `Bearer ${token}`;
+        }
+        
         console.log('Token successfully set in API headers');
         return true;
       } catch (headerError) {
@@ -40,7 +46,49 @@ const ensureValidToken = async () => {
       }
     }
     
-    console.log('No token found in AsyncStorage');
+    // Token bulunamadı, kullanıcı verilerini yenilemeyi deneyelim
+    try {
+      const userDataKeys = ['user', 'user_data', 'userData'];
+      let userData = null;
+      
+      // Kullanıcı verilerini AsyncStorage'dan almayı dene
+      for (const key of userDataKeys) {
+        const storedUser = await AsyncStorage.getItem(key);
+        if (storedUser) {
+          try {
+            userData = JSON.parse(storedUser);
+            console.log(`User data found with key: ${key}`);
+            break;
+          } catch (parseError) {
+            console.error(`Error parsing user data from key '${key}':`, parseError);
+          }
+        }
+      }
+      
+      // Kullanıcı verisi bulunduysa, token'ı tekrar kontrol et
+      if (userData) {
+        for (const key of authTokenKeys) {
+          const storedToken = await AsyncStorage.getItem(key);
+          if (storedToken) {
+            token = storedToken;
+            console.log(`Token found after user data check with key: ${key}`);
+            
+            // Token'ı ayarla
+            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            if (api.defaults.headers) {
+              api.defaults.headers['Authorization'] = `Bearer ${token}`;
+            }
+            
+            console.log('Token successfully set in API headers after retry');
+            return true;
+          }
+        }
+      }
+    } catch (retryError) {
+      console.error('Error during token retry:', retryError);
+    }
+    
+    console.log('No token found in AsyncStorage after all attempts');
     return false;
   } catch (error) {
     console.error('Error checking token:', error);
@@ -50,10 +98,28 @@ const ensureValidToken = async () => {
 
 const messageService = {
   // Tüm konuşmaları getirme
-  async getConversations() {
+  async getConversations(retryCount = 0) {
     try {
       // Ensure we have a valid token
-      const tokenValid = await ensureValidToken();
+      let tokenValid = await ensureValidToken();
+      
+      // If token is not valid, try to refresh it once
+      if (!tokenValid && retryCount < 2) {
+        console.log(`Token bulunamadı, ${retryCount + 1}. yenileme denemesi yapılıyor...`);
+        
+        // Kısa bir bekleme süresi ekleyelim
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Token'ı tekrar doğrulamayı dene
+        tokenValid = await ensureValidToken();
+        
+        // Hala geçerli değilse, bir kez daha recursive olarak dene
+        if (!tokenValid) {
+          console.log(`Token hala geçerli değil, ${retryCount + 1}. deneme yapılıyor...`);
+          return this.getConversations(retryCount + 1);
+        }
+      }
+      
       if (!tokenValid) {
         console.log('Token bulunamadı, konuşmalar yüklenemedi');
         return [];
@@ -66,6 +132,15 @@ const messageService = {
       return response || [];
     } catch (error) {
       console.error('Error in getConversations:', error);
+      
+      // Eğer hata API çağrısından kaynaklanıyorsa ve deneme sayısı limitin altındaysa tekrar dene
+      if (retryCount < 2) {
+        console.log(`API hatası oluştu, ${retryCount + 1}. deneme yapılıyor...`);
+        // Kısa bir bekleme süresi ekleyelim
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return this.getConversations(retryCount + 1);
+      }
+      
       return [];
     }
   },
@@ -82,15 +157,48 @@ const messageService = {
   },
 
   // Bir konuşmanın mesajlarını getirme
-  async getConversationMessages(conversationId, params = {}) {
+  async getConversationMessages(conversationId, params = {}, retryCount = 0) {
     try {
-      await ensureValidToken();
+      // Token doğrulama
+      let tokenValid = await ensureValidToken();
+      
+      // Token geçerli değilse, yenilemeyi dene
+      if (!tokenValid && retryCount < 2) {
+        console.log(`Mesajları yüklerken token bulunamadı, ${retryCount + 1}. yenileme denemesi yapılıyor...`);
+        
+        // Kısa bir bekleme süresi ekleyelim
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Token'ı tekrar doğrulamayı dene
+        tokenValid = await ensureValidToken();
+        
+        // Hala geçerli değilse, bir kez daha recursive olarak dene
+        if (!tokenValid) {
+          console.log(`Token hala geçerli değil, ${retryCount + 1}. deneme yapılıyor...`);
+          return this.getConversationMessages(conversationId, params, retryCount + 1);
+        }
+      }
+      
+      if (!tokenValid) {
+        console.log('Token bulunamadı, mesajlar yüklenemedi');
+        return [];
+      }
+      
       const response = await api.get(`/messages/conversations/${conversationId}/messages`, { params });
       console.log('Messages response:', response);
       // API direkt olarak array dönüyor
       return response || [];
     } catch (error) {
       console.error('Error in getConversationMessages:', error);
+      
+      // Eğer hata API çağrısından kaynaklanıyorsa ve deneme sayısı limitin altındaysa tekrar dene
+      if (retryCount < 2) {
+        console.log(`API hatası oluştu, ${retryCount + 1}. deneme yapılıyor...`);
+        // Kısa bir bekleme süresi ekleyelim
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return this.getConversationMessages(conversationId, params, retryCount + 1);
+      }
+      
       return [];
     }
   },

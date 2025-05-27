@@ -4,7 +4,7 @@ const authService = {
   // Kullanıcı girişi
   async login(email, password) {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/users/login', { email, password });
       return response.data;
     } catch (error) {
       throw error;
@@ -14,7 +14,7 @@ const authService = {
   // Kullanıcı kaydı
   async register(userData) {
     try {
-      const response = await api.post('/auth/register', userData);
+      const response = await api.post('/users/register', userData);
       return response.data;
     } catch (error) {
       throw error;
@@ -24,7 +24,7 @@ const authService = {
   // Kullanıcı çıkışı
   async logout() {
     try {
-      await api.post('/auth/logout');
+      await api.post('/users/logout');
       return true;
     } catch (error) {
       throw error;
@@ -34,7 +34,7 @@ const authService = {
   // Şifremi unuttum
   async forgotPassword(email) {
     try {
-      const response = await api.post('/auth/forgot-password', { email });
+      const response = await api.post('/users/forgot-password', { email });
       return response.data;
     } catch (error) {
       throw error;
@@ -44,7 +44,7 @@ const authService = {
   // Şifre sıfırlama
   async resetPassword(token, newPassword) {
     try {
-      const response = await api.post('/auth/reset-password', {
+      const response = await api.post('/users/reset-password', {
         token,
         password: newPassword
       });
@@ -57,7 +57,7 @@ const authService = {
   // Email doğrulama
   async verifyEmail(code, email) {
     try {
-      const response = await api.post('/auth/verify-email', { code, email });
+      const response = await api.post('/users/verify-email', { code, email });
       return response.data;
     } catch (error) {
       throw error;
@@ -100,7 +100,7 @@ const authService = {
   // Token doğrulama
   async validateToken(token) {
     try {
-      const response = await api.post('/auth/validate-token', { token });
+      const response = await api.post('/users/validate-token', { token });
       return response.data;
     } catch (error) {
       throw error;

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'http://10.196.150.126:5000/api';
 
 // Create axios instance
 const api = axios.create({
@@ -63,7 +63,8 @@ api.interceptors.response.use(
       statusText: error.response?.statusText,
       url: error.config?.url,
       method: error.config?.method,
-      data: error.response?.data
+      data: error.response?.data,
+      errorDetails: error.response?.data?.error || error.response?.data?.message
     });
     
     return Promise.reject(error);
@@ -417,11 +418,12 @@ export const tradeOfferService = {
     }),
   getTradeOfferById: (id) => api.get(`/trade-offers/${id}`),
   respondToTradeOffer: (id, response) => {
+    console.log('Responding to trade offer:', id, response);
     // Check the response value and call the appropriate endpoint
     if (response.response === 'accept') {
-      return api.put(`/trade-offers/${id}/accept`, {});
+      return api.put(`/trade-offers/${id}/accept`, { responseMessage: response.message || '' });
     } else if (response.response === 'reject') {
-      return api.put(`/trade-offers/${id}/reject`, {});
+      return api.put(`/trade-offers/${id}/reject`, { responseMessage: response.message || '' });
     } else {
       console.error('Invalid response type:', response.response);
       return Promise.reject(new Error('Invalid response type. Must be "accept" or "reject".'));
@@ -480,6 +482,20 @@ export const messageService = {
       console.error('Failed to get unread count:', error);
       throw error;
     }),
+};
+
+// Fiyat tahmini servisi (api.js içine ekleyin)
+export const pricePredictionService = {
+  getPricePrediction: (productData) => {
+    console.log("Fiyat tahmini isteniyor:", productData);
+    return api.post('/price-prediction', productData);
+  },
+  
+  // Kategori bazlı gerekli özellikleri getiren fonksiyon
+  getCategoryAttributes: (categoryId) => {
+    console.log("Kategori için gerekli özellikler isteniyor:", categoryId);
+    return api.get(`/price-prediction/attributes/${categoryId}`);
+  }
 };
 
 // Kategori ID haritalaması - Sabit ID'leri MongoDB ID'lerine dönüştürmek için
@@ -568,10 +584,10 @@ const updateCategoryIdMappings = (categories) => {
 };
 
 export const categoryService = {
-  getAllCategories: async () => {
+  getAllCategories: async (retryCount = 0) => {
     try {
       console.log('Categories API çağrılıyor...');
-      const response = await api.get('/categories');
+      const response = await api.get('/categories', { timeout: 10000 }); // 10 saniye timeout
       
       // Yanıt yapısını detaylı incele
       console.log('Categories API yanıt yapısı:', {
@@ -623,6 +639,15 @@ export const categoryService = {
       return response;
     } catch (error) {
       console.error('Error fetching categories:', error);
+      
+      // Hata durumunda otomatik yeniden deneme (en fazla 2 kez)
+      if (retryCount < 2) {
+        console.log(`Kategoriler yüklenirken hata oluştu, ${retryCount + 1}. deneme yapılıyor...`);
+        // Kısa bir bekleme süresi ekleyelim
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return categoryService.getAllCategories(retryCount + 1);
+      }
+      
       throw error;
     }
   },

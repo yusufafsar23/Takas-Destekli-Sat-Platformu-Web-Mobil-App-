@@ -123,7 +123,7 @@ export const AuthProvider = ({ children }) => {
       
       const userData = extractUserData(response);
       setUser(userData);
-      return response.data || response;
+      return { user: userData, ...response.data } || response;
     } catch (err) {
       setError(err.response?.data?.message || 'Giriş yapılamadı');
       throw err;
@@ -142,15 +142,16 @@ export const AuthProvider = ({ children }) => {
       
       if (token) {
         localStorage.setItem('token', token);
+        // Don't set user data yet as they need to verify their email first
+        // The user will verify their email and only then will they be logged in
       } else {
         throw new Error('No token received from server');
       }
       
-      const userDataFromResponse = extractUserData(response);
-      setUser(userDataFromResponse);
+      // Return response without setting user state
       return response.data || response;
     } catch (err) {
-      setError(err.response?.data?.message || 'Kayıt yapılamadı');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Kayıt yapılamadı');
       throw err;
     } finally {
       setIsLoading(false);
@@ -195,6 +196,26 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     updateProfile,
+    verifyEmail: async (code, email) => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await authService.verifyEmail(code, email);
+        
+        if (response.token) {
+          localStorage.setItem('token', response.token);
+        }
+        
+        const userData = extractUserData(response);
+        setUser(userData);
+        return response;
+      } catch (err) {
+        setError(err.response?.data?.error || 'E-posta doğrulama işlemi başarısız oldu');
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    }
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

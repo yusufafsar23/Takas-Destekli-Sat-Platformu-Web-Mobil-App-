@@ -170,7 +170,7 @@ export const AuthProvider = ({ children }) => {
       // Normalize the user data
       const normalizedUser = normalizeUserData(data.user);
       
-      // Set state
+      // Set state - giriş yapan kullanıcılar için her zaman authenticated olarak işaretle
       setUser(normalizedUser);
       setToken(data.token);
       setAuthState('authenticated');
@@ -178,7 +178,8 @@ export const AuthProvider = ({ children }) => {
       console.log('AuthContext: User successfully logged in:', 
         JSON.stringify({
           id: normalizedUser.id || normalizedUser._id,
-          email: normalizedUser.email
+          email: normalizedUser.email,
+          emailVerified: normalizedUser.emailVerified
         })
       );
 
@@ -219,9 +220,12 @@ export const AuthProvider = ({ children }) => {
       // Normalize the user data
       const normalizedUser = normalizeUserData(data.user);
       
+      // Yeni kayıt olan kullanıcı için doğrulama gerektiğini belirt
       setUser(normalizedUser);
       setToken(data.token);
-      setAuthState('authenticated');
+      
+      // Yeni kayıt olduğu için email_verification_required olarak işaretle
+      setAuthState('email_verification_required');
 
       console.log('AuthContext: Yeni kullanıcı kaydedildi:', normalizedUser);
 
@@ -304,26 +308,37 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Email doğrulama fonksiyonu
-  const verifyEmail = async (token) => {
+  const verifyEmail = async (code, email) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await authService.verifyEmail(token);
+      const data = await authService.verifyEmail(code, email);
       
       // Kullanıcı bilgilerini güncelleme
-      if (data.user && data.token) {
+      if (data && (data.user || data.token)) {
         // Normalize the user data
-        const normalizedUser = normalizeUserData(data.user);
+        const normalizedUser = normalizeUserData(data.user || user);
+        
+        // E-posta doğrulandı olarak işaretle
+        normalizedUser.emailVerified = true;
         
         setUser(normalizedUser);
-        setToken(data.token);
+        if (data.token) {
+          setToken(data.token);
+        }
+        
+        // Doğrulama başarılı olduğunda authenticated durumuna geç
         setAuthState('authenticated');
         
         // Save user data to storage
-        await saveUserToStorage(normalizedUser, data.token);
+        await saveUserToStorage(normalizedUser, data.token || token);
         
         // API isteklerinde kullanılacak token ayarı
-        api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+        if (data.token) {
+          api.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+        }
+        
+        console.log('AuthContext: Email verification successful, user is now authenticated');
       }
       
       return data;
@@ -468,6 +483,7 @@ export const AuthProvider = ({ children }) => {
   const isUserAuthenticated = () => {
     const hasValidUser = !!(user && (user.id || user._id));
     const hasValidToken = !!token;
+    const isEmailVerified = !!(user && user.emailVerified);
     const isLoggedIn = hasValidUser && hasValidToken;
     
     console.log('AuthContext: Authentication check:', 
@@ -475,6 +491,7 @@ export const AuthProvider = ({ children }) => {
         hasUser: !!user,
         hasValidUserId: hasValidUser, 
         hasToken: hasValidToken,
+        isEmailVerified,
         isLoggedIn
       })
     );
@@ -512,6 +529,30 @@ export const AuthProvider = ({ children }) => {
         isLoggedIn: isUserAuthenticated()
       })
     );
+  }, [user, token, authState]);
+
+  // E-posta doğrulama durumunu kontrol et
+  useEffect(() => {
+    const checkEmailVerification = () => {
+      const hasValidUser = !!(user && (user.id || user._id));
+      const hasValidToken = !!token;
+      const isEmailVerified = !!(user && user.emailVerified);
+      const isLoggedIn = hasValidUser && hasValidToken;
+      
+      // Kullanıcı giriş yapmış ve authState zaten email_verification_required ise dokunma
+      if (authState === 'email_verification_required') {
+        return;
+      }
+      
+      // Diğer durumlar için normal kontrol
+      if (isLoggedIn) {
+        setAuthState('authenticated');
+      } else if (!isLoggedIn) {
+        setAuthState('unauthenticated');
+      }
+    };
+    
+    checkEmailVerification();
   }, [user, token, authState]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

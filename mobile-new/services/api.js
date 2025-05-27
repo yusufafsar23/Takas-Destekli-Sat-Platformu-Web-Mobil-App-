@@ -88,12 +88,13 @@ api.interceptors.request.use(
 
       // Token'ı birden fazla storage key'den kontrol et
       let token = null;
-      const tokenKeys = ['authToken', 'token'];
+      const tokenKeys = ['authToken', 'token', 'auth_token'];
       
       for (const key of tokenKeys) {
         const storedToken = await AsyncStorage.getItem(key);
         if (storedToken) {
           token = storedToken;
+          console.log(`Token bulundu (${key}): ${token.substring(0, 10)}...`);
           break;
         }
       }
@@ -103,10 +104,24 @@ api.interceptors.request.use(
         if (!config.headers) {
           config.headers = {};
         }
+        
+        // Authorization header'ını ayarla
         config.headers.Authorization = `Bearer ${token}`;
+        
+        // Common header'ı da güncelle (eski implementasyonlar için)
+        if (config.headers.common) {
+          config.headers.common.Authorization = `Bearer ${token}`;
+        }
+        
         console.log('Token başarıyla eklendi:', config.url);
+        console.log('Headers:', JSON.stringify(config.headers));
       } else {
         console.warn('Token bulunamadı:', config.url);
+        
+        // Oturum açma gerektiren bir istek mi kontrol et
+        if (config.url && !config.url.includes('/login') && !config.url.includes('/register')) {
+          console.warn('Bu istek için token gerekli olabilir!');
+        }
       }
       
       // Parametreleri log'a yazdır

@@ -30,15 +30,18 @@ const MessagesScreen = ({ route, navigation }) => {
   const [isConversationListVisible, setIsConversationListVisible] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [error, setError] = useState(null);
+  const [loadAttempts, setLoadAttempts] = useState(0); // Yükleme denemelerini takip etmek için
 
   // Referanslar
   const flatListRef = useRef(null);
   const { user, refreshUserData, authState } = useAuth();
 
   // Konuşmaları yükle
-  const loadConversations = async () => {
+  const loadConversations = async (isRetry = false) => {
     try {
-      setLoading(true);
+      if (!isRetry) {
+        setLoading(true);
+      }
       setError(null);
       console.log("Konuşmalar yükleniyor...");
       console.log("Mevcut kullanıcı ID:", user?._id);
@@ -51,15 +54,30 @@ const MessagesScreen = ({ route, navigation }) => {
           console.log("Kullanıcı bilgisi yenilendi:", refreshedUser ? "Başarılı" : "Başarısız");
           
           if (!refreshedUser) {
-            setError('Kullanıcı bilgisi alınamadı. Lütfen yeniden giriş yapın.');
-            setLoading(false);
-            return;
+            // Yenileme başarısız olduysa ve bu ilk deneme değilse, hata göster
+            if (loadAttempts >= 2) {
+              setError('Kullanıcı bilgisi alınamadı. Lütfen yeniden giriş yapın.');
+              setLoading(false);
+              return;
+            } else {
+              // Bir kez daha deneme yap
+              setLoadAttempts(prev => prev + 1);
+              setTimeout(() => loadConversations(true), 1000);
+              return;
+            }
           }
         } catch (refreshError) {
           console.error("Kullanıcı bilgisi yenilenirken hata:", refreshError);
-          setError('Kullanıcı oturumu doğrulanamadı. Lütfen yeniden giriş yapın.');
-          setLoading(false);
-          return;
+          if (loadAttempts >= 2) {
+            setError('Kullanıcı oturumu doğrulanamadı. Lütfen yeniden giriş yapın.');
+            setLoading(false);
+            return;
+          } else {
+            // Bir kez daha deneme yap
+            setLoadAttempts(prev => prev + 1);
+            setTimeout(() => loadConversations(true), 1000);
+            return;
+          }
         }
       }
       
@@ -71,10 +89,22 @@ const MessagesScreen = ({ route, navigation }) => {
         console.log("API yanıtı:", response ? "Başarılı" : "Başarısız");
       } catch (apiError) {
         console.error("API çağrısı sırasında hata:", apiError);
-        setError('Konuşmalar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
-        setLoading(false);
-        return;
+        
+        // API hatası durumunda otomatik yeniden deneme
+        if (loadAttempts < 2) {
+          setLoadAttempts(prev => prev + 1);
+          console.log(`Konuşmalar yüklenirken hata oluştu, ${loadAttempts + 1}. deneme yapılıyor...`);
+          setTimeout(() => loadConversations(true), 1000);
+          return;
+        } else {
+          setError('Konuşmalar yüklenirken bir hata oluştu. Lütfen tekrar deneyin.');
+          setLoading(false);
+          return;
+        }
       }
+      
+      // Başarılı yanıt alındıysa, deneme sayacını sıfırla
+      setLoadAttempts(0);
       
       if (response && Array.isArray(response) && response.length > 0) {
         console.log(`${response.length} konuşma yüklendi`);
@@ -163,10 +193,12 @@ const MessagesScreen = ({ route, navigation }) => {
   };
 
   // Mesajları yükle
-  const loadMessages = async (conversationId) => {
+  const loadMessages = async (conversationId, isRetry = false) => {
     try {
-      setMessages([]);
-      setLoading(true);
+      if (!isRetry) {
+        setMessages([]);
+        setLoading(true);
+      }
       setError(null);
       console.log(`${conversationId} ID'li konuşmanın mesajları yükleniyor...`);
       
@@ -174,12 +206,32 @@ const MessagesScreen = ({ route, navigation }) => {
       if (!user || !user._id) {
         console.log("Mesajları yüklerken kullanıcı bilgisi eksik, yenileme denenecek...");
         try {
-          await refreshUserData();
+          const refreshedUser = await refreshUserData();
+          if (!refreshedUser) {
+            // Yenileme başarısız olduysa ve bu ilk deneme değilse, hata göster
+            if (loadAttempts >= 2) {
+              setError('Kullanıcı bilgisi alınamadı. Lütfen yeniden giriş yapın.');
+              setLoading(false);
+              return;
+            } else {
+              // Bir kez daha deneme yap
+              setLoadAttempts(prev => prev + 1);
+              setTimeout(() => loadMessages(conversationId, true), 1000);
+              return;
+            }
+          }
         } catch (refreshError) {
           console.error("Mesajları yüklerken kullanıcı bilgisi yenilenirken hata:", refreshError);
-          setError('Kullanıcı oturumu doğrulanamadı. Lütfen yeniden giriş yapın.');
-          setLoading(false);
-          return;
+          if (loadAttempts >= 2) {
+            setError('Kullanıcı oturumu doğrulanamadı. Lütfen yeniden giriş yapın.');
+            setLoading(false);
+            return;
+          } else {
+            // Bir kez daha deneme yap
+            setLoadAttempts(prev => prev + 1);
+            setTimeout(() => loadMessages(conversationId, true), 1000);
+            return;
+          }
         }
       }
       

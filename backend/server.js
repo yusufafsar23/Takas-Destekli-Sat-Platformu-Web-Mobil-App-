@@ -14,6 +14,7 @@ const productRoutes = require('./routes/productRoutes');
 const tradeOfferRoutes = require('./routes/tradeOfferRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
+const pricePredictionRoutes = require('./routes/pricePredictionRoutes');
 
 // Middlewares
 const { errorHandler, notFound } = require('./middleware/errorHandler');
@@ -70,6 +71,7 @@ app.use('/api/trade-offers', tradeOfferRoutes);
 app.use('/api/tradeoffers', tradeOfferRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/price-prediction', pricePredictionRoutes);
 
 // Root Route
 app.get('/', (req, res) => {

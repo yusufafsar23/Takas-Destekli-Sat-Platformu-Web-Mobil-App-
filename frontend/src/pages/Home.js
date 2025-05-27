@@ -75,9 +75,7 @@ const DEFAULT_CATEGORIES = [
     count: 0,
     subcategories: [
       { id: 401, name: 'Kitaplar', count: 0 },
-      { id: 402, name: 'Müzik & Film', count: 0 },
-      { id: 403, name: 'Koleksiyon', count: 0 },
-      { id: 404, name: 'El İşi', count: 0 }
+      { id: 402, name: 'Müzik & Film', count: 0 }
     ]
   },
   { 
@@ -87,7 +85,6 @@ const DEFAULT_CATEGORIES = [
     count: 0,
     subcategories: [
       { id: 501, name: 'Spor Malzemeleri', count: 0 },
-      { id: 502, name: 'Outdoor', count: 0 },
       { id: 503, name: 'Fitness', count: 0 },
       { id: 504, name: 'Bisiklet & Scooter', count: 0 }
     ]
@@ -98,8 +95,7 @@ const DEFAULT_CATEGORIES = [
     icon: '🎮', 
     count: 0,
     subcategories: [
-      { id: 601, name: 'Konsollar', count: 0 },
-      { id: 602, name: 'Oyunlar', count: 0 },
+      { id: 601, name: 'Oyunlar & Konsollar', count: 0 },
       { id: 603, name: 'Aksesuarlar', count: 0 }
     ]
   }
@@ -580,10 +576,13 @@ function Home() {
               {categories.map((category) => (
               <Col key={category.id} xs={6} md={4} lg={2} className="mb-4">
                   <Card className="text-center category-card h-100">
-                    <CategoryDropdown 
-                      category={category} 
-                      subcategories={category.subcategories} 
-                    />
+                    <Link to={`/categories/${category.id}`} className="category-link p-3">
+                      <div className="category-icon">
+                        <span className="category-icon-emoji">{category.icon}</span>
+                      </div>
+                      <h5 className="category-title">{category.name}</h5>
+                      <p className="text-muted category-count mb-0">{category.count || 0} İlan</p>
+                    </Link>
                   </Card>
               </Col>
             ))}

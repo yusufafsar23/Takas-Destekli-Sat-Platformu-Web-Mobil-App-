@@ -121,8 +121,13 @@ const singleUpload = (req, res, next) => {
 
 // Çoklu resim yükleme için Express middleware wrapper
 const multipleUpload = (req, res, next) => {
+  console.log("multipleUpload middleware called");
+  console.log("Request body fields:", Object.keys(req.body || {}));
+  
   uploadMultipleImagesMemory(req, res, (err) => {
     if (err) {
+      console.error("Error in multipleUpload middleware:", err);
+      
       if (err instanceof multer.MulterError) {
         // Multer hatası
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -136,6 +141,14 @@ const multipleUpload = (req, res, next) => {
       
       // Kendi oluşturduğumuz hata
       return res.status(err.statusCode || 400).json({ error: err.message });
+    }
+    
+    console.log("Files after upload:", req.files ? req.files.length : 'No files');
+    if (req.files && req.files.length > 0) {
+      console.log("File details:");
+      req.files.forEach((file, index) => {
+        console.log(`- File ${index + 1}: ${file.originalname}, ${file.mimetype}, ${file.size} bytes`);
+      });
     }
     
     next();

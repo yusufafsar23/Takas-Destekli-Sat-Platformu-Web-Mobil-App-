@@ -282,7 +282,18 @@ const Dashboard = () => {
   
   const handleRespondToOffer = async (offerId, response) => {
     try {
-      await tradeOfferService.respondToTradeOffer(offerId, { response });
+      setError(null); // Önceki hata mesajlarını temizle
+      
+      // Yanıt için bir mesaj ekleyelim
+      const responseObj = { 
+        response, 
+        message: response === 'accept' ? 'Takas teklifiniz kabul edildi.' : 'Üzgünüm, takas teklifinizi kabul edemiyorum.'
+      };
+      
+      console.log(`${response === 'accept' ? 'Kabul' : 'Ret'} işlemi başlatılıyor:`, offerId);
+      
+      const result = await tradeOfferService.respondToTradeOffer(offerId, responseObj);
+      console.log('İşlem sonucu:', result);
       
       // Update offer status in the list
       setReceivedOffers(prev => 
@@ -300,15 +311,24 @@ const Dashboard = () => {
           pendingOffers: prev.pendingOffers - 1,
           acceptedOffers: prev.acceptedOffers + 1
         }));
+        
+        // Başarılı işlem mesajı
+        setError({ variant: 'success', message: 'Takas teklifi başarıyla kabul edildi!' });
       } else {
         setStats(prev => ({
           ...prev,
           pendingOffers: prev.pendingOffers - 1
         }));
+        
+        // Başarılı işlem mesajı
+        setError({ variant: 'success', message: 'Takas teklifi reddedildi.' });
       }
     } catch (err) {
       console.error('Takas teklifine yanıt verilirken hata oluştu:', err);
-      setError('Takas teklifine yanıt verilirken bir hata oluştu.');
+      
+      // Hata mesajını kullanıcıya göster
+      const errorMessage = err.response?.data?.error || err.message || 'Bilinmeyen bir hata oluştu';
+      setError({ variant: 'danger', message: `Takas teklifine yanıt verilirken bir hata oluştu: ${errorMessage}` });
     }
   };
   
@@ -338,7 +358,9 @@ const Dashboard = () => {
       <h1 className="mb-4">Hesabım</h1>
       
       {error && (
-        <Alert variant="danger">{error}</Alert>
+        <Alert variant={error.variant || "danger"}>
+          {error.message || error}
+        </Alert>
       )}
       
       {/* Stats Cards */}

@@ -8,39 +8,36 @@ import { getCategoryPlaceholder } from '../utils/imageHelpers';
 // Kategori haritalaması
 const CATEGORY_MAPPINGS = {
   '1': { name: 'Elektronik', mongoId: '', subcategories: {
-    '101': { name: 'Bilgisayarlar', mongoId: '' },
-    '102': { name: 'Telefonlar', mongoId: '' },
-    '103': { name: 'Televizyonlar', mongoId: '' },
-    '104': { name: 'Ses Sistemleri', mongoId: '' }
+    '101': { name: 'Bilgisayarlar', mongoId: '68137ab2358c748f63723fe2' },
+    '102': { name: 'Telefonlar', mongoId: '68137ab2358c748f63723fe4' },
+    '103': { name: 'Televizyonlar', mongoId: '68137ab2358c748f63723fe6' },
+    '104': { name: 'Ses Sistemleri', mongoId: '68137ab2358c748f63723fe8' }
   } },
   '2': { name: 'Ev Eşyaları', mongoId: '', subcategories: {
-    '201': { name: 'Mobilya', mongoId: '' },
-    '202': { name: 'Mutfak Eşyaları', mongoId: '' },
-    '203': { name: 'Yatak ve Banyo', mongoId: '' },
-    '204': { name: 'Dekorasyon', mongoId: '' }
+    '201': { name: 'Mobilya', mongoId: '68137ab4358c748f63723ff6' },
+    '202': { name: 'Mutfak Eşyaları', mongoId: '68137ab4358c748f63723ff8' },
+    '203': { name: 'Yatak ve Banyo', mongoId: '68137ab4358c748f63723ffa' },
+    '204': { name: 'Dekorasyon', mongoId: '68137ab5358c748f63723ffc' }
   } },
   '3': { name: 'Giyim', mongoId: '', subcategories: {
-    '301': { name: 'Kadın Giyim', mongoId: '' },
-    '302': { name: 'Erkek Giyim', mongoId: '' },
-    '303': { name: 'Çocuk Giyim', mongoId: '' },
-    '304': { name: 'Ayakkabı ve Çanta', mongoId: '' }
+    '301': { name: 'Kadın Giyim', mongoId: '68137ab3358c748f63723fec' },
+    '302': { name: 'Erkek Giyim', mongoId: '68137ab3358c748f63723fee' },
+    '303': { name: 'Çocuk Giyim', mongoId: '68137ab3358c748f63723ff0' },
+    '304': { name: 'Ayakkabı ve Çanta', mongoId: '68137ab3358c748f63723ff2' },
+    '305': { name: 'Bebek ve Çocuk', mongoId: '68137ab1358c748f63723fde' }
   } },
   '4': { name: 'Kitap & Hobi', mongoId: '', subcategories: {
-    '401': { name: 'Kitaplar', mongoId: '' },
-    '402': { name: 'Müzik & Film', mongoId: '' },
-    '403': { name: 'Koleksiyon', mongoId: '' },
-    '404': { name: 'El İşi', mongoId: '' }
+    '401': { name: 'Kitaplar', mongoId: '68137ab0358c748f63723fd8' },
+    '402': { name: 'Müzik & Film', mongoId: '' }
   } },
   '5': { name: 'Spor', mongoId: '', subcategories: {
-    '501': { name: 'Spor Malzemeleri', mongoId: '' },
-    '502': { name: 'Outdoor', mongoId: '' },
+    '501': { name: 'Spor Malzemeleri', mongoId: '68137ab0358c748f63723fd3' },
     '503': { name: 'Fitness', mongoId: '' },
-    '504': { name: 'Bisiklet & Scooter', mongoId: '' }
+    '504': { name: 'Bisiklet & Scooter', mongoId: '68137ab0358c748f63723fd3' }
   } },
   '6': { name: 'Oyun & Konsol', mongoId: '', subcategories: {
-    '601': { name: 'Konsollar', mongoId: '' },
-    '602': { name: 'Oyunlar', mongoId: '' },
-    '603': { name: 'Aksesuarlar', mongoId: '' }
+    '601': { name: 'Oyunlar & Konsollar', mongoId: '68137ab0358c748f63723fd6' },
+    '603': { name: 'Aksesuarlar', mongoId: '68137ab4358c748f63723ff4' }
   } }
 };
 
@@ -107,14 +104,33 @@ function isProductElectronic(product) {
   const titleLower = product.title ? product.title.toLowerCase() : '';
   const descLower = product.description ? product.description.toLowerCase() : '';
   
-  // Elektronik kategorileri için anahtar kelimeler
+  // Elektronik kategorileri için anahtar kelimeler - daha spesifik ve dekorasyon ile karışmayacak şekilde
   const electronicKeywords = [
     'elektronik', 'electronic', 'tech', 'teknoloji',
-    'telefon', 'phone', 'iphone', 'samsung', 'xiaomi', 
-    'bilgisayar', 'computer', 'laptop', 'notebook', 'pc',
-    'tv', 'televizyon', 'television', 'smart tv',
-    'hoparlör', 'speaker', 'kulaklık', 'headphone'
+    'telefon', 'phone', 'iphone', 'samsung', 'xiaomi', 'apple', 
+    'bilgisayar', 'computer', 'laptop', 'notebook', 'pc', 'masaüstü',
+    'tv', 'televizyon', 'television', 'smart tv', 'lcd', 'led tv',
+    'hoparlör', 'speaker', 'kulaklık', 'headphone', 'bluetooth',
+    'şarj cihazı', 'adaptör', 'batarya', 'tablet', 'klavye', 'mouse',
+    'ses sistemi', 'ses sistemleri', 'müzik sistemi', 'anfi', 'amplifikatör', 
+    'stereo', 'woofer', 'subwoofer', 'soundbar', 'mikrofon', 'mikser',
+    'echo', 'bass', 'tiz', 'audio', 'ses', 'müzik çalar', 'mp3'
   ];
+  
+  // Dekorasyon ile ilgili kelimeler - bunlar varsa elektronik kabul etme
+  const decorationKeywords = [
+    'dekorasyon', 'süs', 'hediyelik', 'biblo', 'vazo', 'çerçeve', 'mum',
+    'duvar', 'tablo', 'halı', 'perde', 'yastık', 'örtü', 'ev dekorasyon'
+  ];
+  
+  // Başlık veya açıklamada dekorasyon ile ilgili kelime varsa, elektronik kategorisine dahil etme
+  const hasDecorationKeyword = decorationKeywords.some(keyword => 
+    titleLower.includes(keyword) || descLower.includes(keyword)
+  );
+  
+  if (hasDecorationKeyword) {
+    return false;
+  }
   
   // Kategori elektronik mi?
   if (typeof product.category === 'object' && product.category) {
@@ -126,12 +142,29 @@ function isProductElectronic(product) {
       return true;
     }
     
+    // Dekorasyon kategorisindeyse kesinlikle elektronik değil
+    if (catName.includes('dekor') || catName.includes('süs') || catName.includes('biblo')) {
+      return false;
+    }
+    
     // Üst kategori elektronik mi?
     if (product.category.parent && typeof product.category.parent === 'object') {
       const parentName = product.category.parent.name ? product.category.parent.name.toLowerCase() : '';
       if (parentName.includes('elektronik')) {
         return true;
       }
+      
+      // Üst kategori dekorasyon ise kesinlikle elektronik değil
+      if (parentName.includes('dekor') || parentName.includes('ev eşya')) {
+        return false;
+      }
+    }
+  } else if (typeof product.category === 'string') {
+    const catStr = product.category.toLowerCase();
+    
+    // Dekorasyon kategorisindeyse kesinlikle elektronik değil
+    if (catStr.includes('dekor') || catStr.includes('süs') || catStr.includes('ev eşya')) {
+      return false;
     }
   }
   
@@ -341,12 +374,88 @@ const CategoryPage = () => {
       return;
     }
     
+    console.log(`Alt kategori bilgisi:`, subCategoryInfo);
+    
     setSubcategory({
       name: subCategoryInfo.name,
       _id: subCategoryInfo.mongoId || ''
     });
     
-    // Alt kategori ürünlerini getir
+    // Telefonlar kategorisi için özel işlem
+    const isTelephoneCategory = subCatId === '102';
+    // Bisiklet & Scooter kategorisi için özel işlem
+    const isBicycleScooterCategory = subCatId === '504';
+    
+    if (isTelephoneCategory) {
+      console.log("Telefonlar kategorisi için özel işlem yapılıyor...");
+      
+      // Telefon kategorisi için sabit MongoDB ID
+      const telefonlarCategoryId = '68137ab2358c748f63723fe4';
+      
+      try {
+        // Doğrudan API'den telefonlar kategorisine ait ürünleri getir
+        const telefonlarResponse = await productService.getAllProducts({
+          category: telefonlarCategoryId,
+          sort: sortParam,
+          limit: 100
+        });
+        
+        let telefonProducts = [];
+        if (telefonlarResponse?.data?.data && Array.isArray(telefonlarResponse.data.data)) {
+          telefonProducts = telefonlarResponse.data.data;
+        } else if (telefonlarResponse?.data && Array.isArray(telefonlarResponse.data)) {
+          telefonProducts = telefonlarResponse.data;
+        }
+        
+        console.log(`Telefonlar kategorisinden getirilen ürün sayısı: ${telefonProducts.length}`);
+        
+        // Dekorasyon ürününü filtrele
+        const filteredTelefonProducts = telefonProducts.filter(product => 
+          product._id !== '682c660c68777d1ab06cde6a'
+        );
+        
+        console.log(`Filtreleme sonrası telefon ürünü sayısı: ${filteredTelefonProducts.length}`);
+        
+        setProducts(filteredTelefonProducts);
+        setTotalProducts(filteredTelefonProducts.length);
+        setLoading(false);
+        return;
+      } catch (err) {
+        console.error('Telefonlar kategorisi ürünleri getirilirken hata:', err);
+      }
+    } else if (isBicycleScooterCategory) {
+      console.log("Bisiklet & Scooter kategorisi için özel işlem yapılıyor...");
+      
+      // Bisiklet & Scooter kategorisi için sabit MongoDB ID
+      const bisikletScooterCategoryId = '68137ab0358c748f63723fd3';
+      
+      try {
+        // Doğrudan API'den bisiklet & scooter kategorisine ait ürünleri getir
+        const bisikletScooterResponse = await productService.getAllProducts({
+          category: bisikletScooterCategoryId,
+          sort: sortParam,
+          limit: 100
+        });
+        
+        let bisikletScooterProducts = [];
+        if (bisikletScooterResponse?.data?.data && Array.isArray(bisikletScooterResponse.data.data)) {
+          bisikletScooterProducts = bisikletScooterResponse.data.data;
+        } else if (bisikletScooterResponse?.data && Array.isArray(bisikletScooterResponse.data)) {
+          bisikletScooterProducts = bisikletScooterResponse.data;
+        }
+        
+        console.log(`Bisiklet & Scooter kategorisinden getirilen ürün sayısı: ${bisikletScooterProducts.length}`);
+        
+        setProducts(bisikletScooterProducts);
+        setTotalProducts(bisikletScooterProducts.length);
+        setLoading(false);
+        return;
+      } catch (err) {
+        console.error('Bisiklet & Scooter kategorisi ürünleri getirilirken hata:', err);
+      }
+    }
+    
+    // Diğer alt kategoriler için normal işleme devam et
     let productsList = [];
     if (subCategoryInfo.mongoId) {
       try {
@@ -368,34 +477,53 @@ const CategoryPage = () => {
     
     console.log(`Alt kategori ID'si ile getirilen ürün sayısı: ${productsList.length}`);
     
-    // Telefon kategorisi için özel işlem
-    const isTelephoneCategory = subCategoryInfo.name.toLowerCase() === 'telefonlar';
-    
-    // Telefon ürünleri veya az ürün varsa içerik bazlı filtreleme yap
-    if (isTelephoneCategory || productsList.length < 5) {
-      // Telefon kategorisi için özel kontrol
-      if (isTelephoneCategory) {
-        const phoneProducts = allProductsList.filter(product => isPhoneProduct(product));
+    // Alt kategori için MongoDB ID bazlı filtreleme yap
+    if (subCategoryInfo.mongoId) {
+      console.log(`Alt kategori için MongoDB ID bazlı filtreleme: ${subCategoryInfo.mongoId}`);
+      
+      // Eğer çok az ürün varsa, doğrudan ID bazlı filtreleme yap
+      if (productsList.length < 5) {
+        console.log("Yeterli ürün bulunamadı, doğrudan kategori ID ile filtreleme yapılıyor...");
         
-        // Telefon ürünlerini ekle
-        phoneProducts.forEach(product => {
+        // Tüm ürünler içinden bu alt kategoriye ait olanları bul (ID bazlı)
+        const exactCategoryProducts = allProductsList.filter(product => {
+          if (product.category) {
+            // Kategori bir obje ise
+            if (typeof product.category === 'object' && product.category._id) {
+              return product.category._id === subCategoryInfo.mongoId;
+            }
+            // Kategori bir string ise
+            else if (typeof product.category === 'string') {
+              return product.category === subCategoryInfo.mongoId;
+            }
+          }
+          return false;
+        });
+        
+        console.log(`Kesin kategori ID eşleşmesiyle bulunan ürün sayısı: ${exactCategoryProducts.length}`);
+        
+        // Kesin eşleşen ürünleri ekle
+        exactCategoryProducts.forEach(product => {
           if (!productsList.some(p => p._id === product._id)) {
             productsList.push(product);
           }
         });
       }
-      
-      // Kategori ve alt kategori ismine göre eşleşme kontrolü
-      const filteredProducts = allProductsList.filter(product => 
-        doesProductMatchCategory(product, mainCategory.name, subCategoryInfo.name)
-      );
-      
-      // Tekrar olmadan ekle
-      filteredProducts.forEach(product => {
-        if (!productsList.some(p => p._id === product._id)) {
-          productsList.push(product);
+    }
+    
+    // Sorunlu ürünleri filtrele (özellikle dekorasyon ürünlerini)
+    if (productsList.length > 0) {
+      const filteredList = productsList.filter(product => {
+        // Ürün ID'si kontrolü - sorunlu ürünü direkt filtrele
+        if (product._id === '682c660c68777d1ab06cde6a') {
+          console.log('Sorunlu dekorasyon ürünü filtrelendi:', product.title || product._id);
+          return false;
         }
+        return true;
       });
+      
+      console.log(`Filtreleme sonrası kalan ürün sayısı: ${filteredList.length}`);
+      productsList = filteredList;
     }
     
     console.log(`Toplam eşleşen alt kategori ürün sayısı: ${productsList.length}`);
@@ -435,8 +563,11 @@ const CategoryPage = () => {
       console.error('Alt kategori sayısı kaydedilirken hata:', e);
     }
     
-    setProducts(productsList);
-    setTotalProducts(productsList.length);
+    // Ürünleri client-side olarak sırala
+    const sortedProducts = sortProductsClientSide(productsList, sortBy);
+    
+    setProducts(sortedProducts);
+    setTotalProducts(sortedProducts.length);
     setLoading(false);
   };
   
@@ -466,8 +597,18 @@ const CategoryPage = () => {
     // Tüm kategori isimleri
     const categoryName = mappedCategory.name.toLowerCase();
     const isElectronics = categoryName === 'elektronik';
+    const isHomeItems = categoryName === 'ev eşyaları' || catId === '2';
+    const isClothing = categoryName === 'giyim' || catId === '3';
+    const isBookHobby = categoryName === 'kitap & hobi' || catId === '4';
+    const isSports = categoryName === 'spor' || catId === '5';
+    const isGaming = categoryName === 'oyun & konsol' || catId === '6';
     
     console.log("Elektronik kategorisi mi?", isElectronics);
+    console.log("Ev Eşyaları kategorisi mi?", isHomeItems);
+    console.log("Giyim kategorisi mi?", isClothing);
+    console.log("Kitap & Hobi kategorisi mi?", isBookHobby);
+    console.log("Spor kategorisi mi?", isSports);
+    console.log("Oyun & Konsol kategorisi mi?", isGaming);
     
     // Alt kategorileri ve isimlerini al
     const subcategories = Object.values(mappedCategory.subcategories);
@@ -506,10 +647,19 @@ const CategoryPage = () => {
       }
     }
     
-    // Alt kategorilere ait tüm ürünleri getir (özellikle Elektronik için kritik)
+    // Alt kategorilere ait tüm ürünleri getir
     if (subcategoryIds.length > 0) {
       try {
         console.log("Alt kategorilere ait ürünler getiriliyor...");
+        
+        // Ses sistemleri alt kategorisi için özel kontrol
+        const sesSistemleriSubCategory = subcategories.find(subcat => 
+          subcat.name.toLowerCase().includes('ses sistem')
+        );
+        
+        if (sesSistemleriSubCategory && sesSistemleriSubCategory.mongoId) {
+          console.log("Ses sistemleri alt kategorisi bulundu:", sesSistemleriSubCategory.name);
+        }
         
         // Her bir alt kategori için ürünleri getir
         for (const subcategoryId of subcategoryIds) {
@@ -550,50 +700,437 @@ const CategoryPage = () => {
     
     // Elektronik kategorisi için özel işlem
     if (isElectronics) {
-      // Telefon ürünleri için özel kontrol
-      const phoneProducts = allProductsList.filter(product => isPhoneProduct(product));
-      console.log(`Telefon olarak tespit edilen ürün sayısı: ${phoneProducts.length}`);
+      console.log("Elektronik kategorisi için özel işlem yapılıyor...");
       
-      // Telefon ürünlerini ekle
-      phoneProducts.forEach(product => {
-        if (!productsList.some(p => p._id === product._id)) {
-          productsList.push(product);
-        }
-      });
+      // Elektronik alt kategorileri için sabit ID'ler
+      const elektronikAltKategoriIDs = [
+        '68137ab2358c748f63723fe2', // Bilgisayarlar
+        '68137ab2358c748f63723fe4', // Telefonlar
+        '68137ab2358c748f63723fe6', // Televizyonlar
+        '68137ab2358c748f63723fe8'  // Ses Sistemleri
+      ];
       
-      // Elektronik ürünlerini ekle
-      const electronicProducts = allProductsList.filter(product => isProductElectronic(product));
-      electronicProducts.forEach(product => {
-        if (!productsList.some(p => p._id === product._id)) {
-          productsList.push(product);
-        }
-      });
+      console.log("Elektronik alt kategori ID'leri:", elektronikAltKategoriIDs);
       
-      // Anahtar kelime araması
-      const keywords = ['elektronik', 'bilgisayar', 'telefon', 'tv'];
-      for (const keyword of keywords) {
-        try {
-          const searchResponse = await productService.getAllProducts({
-            search: keyword,
-            sort: sortParam,
-            limit: 30
-          });
-          
-          let searchResults = [];
-          if (searchResponse?.data?.data && Array.isArray(searchResponse.data.data)) {
-            searchResults = searchResponse.data.data;
-          } else if (searchResponse?.data && Array.isArray(searchResponse.data)) {
-            searchResults = searchResponse.data;
+      // Tüm ürünler içinden elektronik alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return elektronikAltKategoriIDs.includes(product.category._id);
           }
-          
-          // Arama sonuçlarını ekle
-          searchResults.forEach(product => {
-            if (!productsList.some(p => p._id === product._id)) {
-              productsList.push(product);
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return elektronikAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş ürün sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir elektronik alt kategorisi için ürünleri getir
+        for (const categoryId of elektronikAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
             }
-          });
-        } catch (searchErr) {
-          console.error(`"${keyword}" araması sırasında hata:`, searchErr);
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
+        }
+      }
+    }
+    
+    // Ev Eşyaları kategorisi için özel işlem
+    if (isHomeItems) {
+      console.log("Ev Eşyaları kategorisi için özel işlem yapılıyor...");
+      
+      // Ev Eşyaları alt kategorileri için sabit ID'ler
+      const evEsyalariAltKategoriIDs = [
+        '68137ab4358c748f63723ff6', // Mobilya
+        '68137ab4358c748f63723ff8', // Mutfak Eşyaları
+        '68137ab4358c748f63723ffa', // Yatak ve Banyo
+        '68137ab5358c748f63723ffc'  // Dekorasyon
+      ];
+      
+      console.log("Ev Eşyaları alt kategori ID'leri:", evEsyalariAltKategoriIDs);
+      
+      // Tüm ürünler içinden ev eşyaları alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return evEsyalariAltKategoriIDs.includes(product.category._id);
+          }
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return evEsyalariAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş ev eşyası sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir ev eşyaları alt kategorisi için ürünleri getir
+        for (const categoryId of evEsyalariAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
+            }
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
+        }
+      }
+    }
+    
+    // Giyim kategorisi için özel işlem
+    if (isClothing) {
+      console.log("Giyim kategorisi için özel işlem yapılıyor...");
+      
+      // Giyim alt kategorileri için sabit ID'ler
+      const giyimAltKategoriIDs = [
+        '68137ab3358c748f63723fec', // Kadın Giyim
+        '68137ab3358c748f63723fee', // Erkek Giyim
+        '68137ab3358c748f63723ff0', // Çocuk Giyim
+        '68137ab3358c748f63723ff2', // Ayakkabılar
+        '68137ab1358c748f63723fde'  // Bebek ve Çocuk
+      ];
+      
+      console.log("Giyim alt kategori ID'leri:", giyimAltKategoriIDs);
+      
+      // Tüm ürünler içinden giyim alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return giyimAltKategoriIDs.includes(product.category._id);
+          }
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return giyimAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş giyim ürünü sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir giyim alt kategorisi için ürünleri getir
+        for (const categoryId of giyimAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
+            }
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
+        }
+      }
+    }
+    
+    // Kitap & Hobi kategorisi için özel işlem
+    if (isBookHobby) {
+      console.log("Kitap & Hobi kategorisi için özel işlem yapılıyor...");
+      
+      // Kitap & Hobi alt kategorileri için sabit ID'ler
+      const kitapHobiAltKategoriIDs = [
+        '68137ab0358c748f63723fd8' // Kitaplar
+      ];
+      
+      console.log("Kitap & Hobi alt kategori ID'leri:", kitapHobiAltKategoriIDs);
+      
+      // Tüm ürünler içinden kitap & hobi alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return kitapHobiAltKategoriIDs.includes(product.category._id);
+          }
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return kitapHobiAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş kitap & hobi ürünü sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir kitap & hobi alt kategorisi için ürünleri getir
+        for (const categoryId of kitapHobiAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
+            }
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
+        }
+      }
+    }
+    
+    // Spor kategorisi için özel işlem
+    if (isSports) {
+      console.log("Spor kategorisi için özel işlem yapılıyor...");
+      
+      // Spor alt kategorileri için sabit ID'ler
+      const sporAltKategoriIDs = [
+        '68137ab0358c748f63723fd3' // Spor Malzemeleri
+      ];
+      
+      console.log("Spor alt kategori ID'leri:", sporAltKategoriIDs);
+      
+      // Tüm ürünler içinden spor alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return sporAltKategoriIDs.includes(product.category._id);
+          }
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return sporAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş spor ürünü sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir spor alt kategorisi için ürünleri getir
+        for (const categoryId of sporAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
+            }
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
+        }
+      }
+    }
+    
+    // Oyun & Konsol kategorisi için özel işlem
+    if (isGaming) {
+      console.log("Oyun & Konsol kategorisi için özel işlem yapılıyor...");
+      
+      // Oyun & Konsol alt kategorileri için sabit ID'ler
+      const oyunKonsolAltKategoriIDs = [
+        '68137ab0358c748f63723fd6', // Oyunlar & Konsollar
+        '68137ab4358c748f63723ff4'  // Aksesuarlar
+      ];
+      
+      console.log("Oyun & Konsol alt kategori ID'leri:", oyunKonsolAltKategoriIDs);
+      
+      // Tüm ürünler içinden oyun & konsol alt kategorilerine ait olanları filtrele
+      const filteredByCategory = allProductsList.filter(product => {
+        // Kategori ID kontrolü
+        if (product.category) {
+          // Kategori bir obje ise (populate edilmiş)
+          if (typeof product.category === 'object' && product.category._id) {
+            return oyunKonsolAltKategoriIDs.includes(product.category._id);
+          }
+          // Kategori bir string ise (ID)
+          else if (typeof product.category === 'string') {
+            return oyunKonsolAltKategoriIDs.includes(product.category);
+          }
+        }
+        return false;
+      });
+      
+      console.log(`Kategori ID'lerine göre filtrelenmiş oyun & konsol ürünü sayısı: ${filteredByCategory.length}`);
+      
+      // Filtrelenmiş ürünleri ekle
+      filteredByCategory.forEach(product => {
+        if (!productsList.some(p => p._id === product._id)) {
+          productsList.push(product);
+        }
+      });
+      
+      // Eğer yeterli ürün bulunamadıysa, her bir alt kategori için ayrı ayrı API çağrısı yap
+      if (filteredByCategory.length < 10) {
+        console.log("Yeterli ürün bulunamadı, her bir alt kategori için ayrı ayrı sorgu yapılıyor...");
+        
+        // Her bir oyun & konsol alt kategorisi için ürünleri getir
+        for (const categoryId of oyunKonsolAltKategoriIDs) {
+          try {
+            const categoryResponse = await productService.getAllProducts({
+              category: categoryId,
+              sort: sortParam,
+              limit: 30
+            });
+            
+            let categoryProducts = [];
+            if (categoryResponse?.data?.data && Array.isArray(categoryResponse.data.data)) {
+              categoryProducts = categoryResponse.data.data;
+            } else if (categoryResponse?.data && Array.isArray(categoryResponse.data)) {
+              categoryProducts = categoryResponse.data;
+            }
+            
+            console.log(`Alt kategori ${categoryId} için bulunan ürün sayısı: ${categoryProducts.length}`);
+            
+            // Bu alt kategoriden gelen ve ana listede olmayan ürünleri ekle
+            categoryProducts.forEach(product => {
+              if (!productsList.some(p => p._id === product._id)) {
+                productsList.push(product);
+              }
+            });
+          } catch (categoryErr) {
+            console.error(`Alt kategori ${categoryId} ürünleri getirilirken hata:`, categoryErr);
+          }
         }
       }
     }
@@ -627,8 +1164,11 @@ const CategoryPage = () => {
       console.error('Kategori sayısı kaydedilirken hata:', e);
     }
     
-    setProducts(productsList);
-    setTotalProducts(productsList.length);
+    // Ürünleri client-side olarak sırala
+    const sortedProducts = sortProductsClientSide(productsList, sortBy);
+    
+    setProducts(sortedProducts);
+    setTotalProducts(sortedProducts.length);
     setLoading(false);
   };
 
@@ -644,6 +1184,48 @@ const CategoryPage = () => {
 
   const handleSortChange = (e) => {
     setSortBy(e.target.value);
+    
+    // Sıralama değiştiğinde client-side sıralama da yap
+    if (products.length > 0) {
+      const sortedProducts = sortProductsClientSide(products, e.target.value);
+      setProducts(sortedProducts);
+    }
+  };
+  
+  // Client-side sıralama fonksiyonu
+  const sortProductsClientSide = (productsList, sortOption) => {
+    console.log(`Client-side sıralama yapılıyor: ${sortOption}`);
+    
+    const sortedProducts = [...productsList];
+    
+    switch (sortOption) {
+      case 'newest':
+        return sortedProducts.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          return dateB - dateA;
+        });
+      case 'oldest':
+        return sortedProducts.sort((a, b) => {
+          const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+          const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+          return dateA - dateB;
+        });
+      case 'price_low':
+        return sortedProducts.sort((a, b) => {
+          const priceA = a.price ? parseFloat(a.price) : 0;
+          const priceB = b.price ? parseFloat(b.price) : 0;
+          return priceA - priceB;
+        });
+      case 'price_high':
+        return sortedProducts.sort((a, b) => {
+          const priceA = a.price ? parseFloat(a.price) : 0;
+          const priceB = b.price ? parseFloat(b.price) : 0;
+          return priceB - priceA;
+        });
+      default:
+        return sortedProducts;
+    }
   };
 
   const getProductImage = (product) => {

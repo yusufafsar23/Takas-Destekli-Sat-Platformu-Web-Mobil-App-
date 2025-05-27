@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   RefreshControl,
-  Image
+  Image,
+  SafeAreaView,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -20,8 +22,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 
 // Sabit API URL tanımı
-const API_BASE_URL = 'http://10.196.150.126:5000';
-const API_IMAGE_URL = 'http://10.196.150.126:5000/uploads';
+const API_BASE_URL = 'http://172.20.10.3:5000';
+const API_IMAGE_URL = 'http://172.20.10.3:5000/uploads';
 
 const UserTradesScreen = ({ route, navigation }) => {
   const { userId, initialTradeData } = route.params || {};
@@ -1064,11 +1066,11 @@ const UserTradesScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header with title */}
-      <View style={styles.header}>
+      <SafeAreaView style={styles.header}>
         <Text style={styles.headerTitle}>
           {isCurrentUser ? 'Takaslarım' : 'Kullanıcının Takasları'}
         </Text>
-      </View>
+      </SafeAreaView>
       
       {/* Filter buttons */}
       <FilterButtons />
@@ -1116,11 +1118,12 @@ const styles = StyleSheet.create({
     color: '#666',
   },
   header: {
-    paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     backgroundColor: '#FF6B6B',
+    paddingTop: Platform.OS === 'ios' ? 10 : 40,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 20,

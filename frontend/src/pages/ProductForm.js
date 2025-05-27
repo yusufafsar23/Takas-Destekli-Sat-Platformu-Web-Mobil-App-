@@ -3,6 +3,7 @@ import { Container, Form, Button, Row, Col, Card, Alert, Spinner } from 'react-b
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { productService, categoryService } from '../services/api';
+import PricePrediction from '../components/PricePrediction';
 
 const ProductForm = () => {
   const { id } = useParams();
@@ -23,6 +24,10 @@ const ProductForm = () => {
   const [images, setImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [imagePreviewUrls, setImagePreviewUrls] = useState([]);
+  const [attributes, setAttributes] = useState({});
+
+  // Yapay zeka fiyat tahmini için
+  const [showPricePrediction, setShowPricePrediction] = useState(false);
   
   // Categories
   const [categories, setCategories] = useState([]);
@@ -234,6 +239,44 @@ const ProductForm = () => {
     }
   }, [category, categories]);
   
+  // Kategori değiştiğinde yapay zeka fiyat tahmini göster
+  useEffect(() => {
+    if (category) {
+      setShowPricePrediction(true);
+    } else {
+      setShowPricePrediction(false);
+    }
+  }, [category]);
+
+  // Fiyat tahmini tamamlandığında çağrılacak fonksiyon
+  const handlePricePredict = (prediction) => {
+    console.log("Fiyat tahmini sonucu:", prediction);
+    
+    if (prediction && prediction.estimatedPrice) {
+      // Fiyat tahmini sonucunu fiyat alanına ata
+      const predictedPrice = prediction.estimatedPrice.toString();
+      console.log("Atanacak fiyat değeri:", predictedPrice);
+      
+      // Doğrudan fiyat değerini ayarla
+      setPrice(predictedPrice);
+      
+      // Takas seçeneğini kapat (çünkü fiyat belirledik)
+      setOnlyForTrade(false);
+      
+      // Kullanıcıya bildirim ver
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+    }
+  };
+
+  // Özellikler değiştiğinde çağrılacak fonksiyon
+  const handleAttributeChange = (attributeName, value) => {
+    setAttributes(prev => ({
+      ...prev,
+      [attributeName]: value
+    }));
+  };
+  
   const handleImageChange = (e) => {
     e.preventDefault();
     
@@ -294,18 +337,29 @@ const ProductForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!title || !description || !category || !condition || !location) {
-      setError('Lütfen zorunlu alanları doldurun.');
+    // Formda gerekli alanların kontrolü
+    if (!title.trim()) {
+      setError('Başlık gereklidir.');
       return;
     }
     
-    if (!onlyForTrade && (!price || isNaN(parseFloat(price)) || parseFloat(price) <= 0)) {
-      setError('Lütfen geçerli bir fiyat girin veya "Sadece Takas" seçeneğini işaretleyin.');
+    if (!description.trim()) {
+      setError('Açıklama gereklidir.');
       return;
     }
     
-    if (imagePreviewUrls.length === 0) {
-      setError('Lütfen en az bir resim yükleyin.');
+    if (!category) {
+      setError('Kategori gereklidir.');
+      return;
+    }
+    
+    if (!location.trim()) {
+      setError('Konum gereklidir.');
+      return;
+    }
+    
+    if (!onlyForTrade && (!price || isNaN(parseFloat(price)) || parseFloat(price) < 0)) {
+      setError('Geçerli bir fiyat giriniz.');
       return;
     }
     
@@ -313,167 +367,83 @@ const ProductForm = () => {
       setSubmitLoading(true);
       setError(null);
       
-      // Kategori değerini kontrol et ve doğru formata getir
-      let categoryId = category;
+      // FormData oluştur - hem ürün bilgileri hem de resimler için
+      const formData = new FormData();
       
-      // Kategori bir ID değilse ve isim ise, kategoriler içinden ID'sini bul
-      if (category && !/^[0-9a-fA-F]{24}$/.test(category) && categories.length > 0) {
-        console.log("Kategori MongoDB ID formatında değil:", category);
-        const foundCategory = categories.find(cat => 
-          cat.name === category || cat.name?.toLowerCase() === category?.toLowerCase()
-        );
-        
-        if (foundCategory) {
-          categoryId = foundCategory._id || foundCategory.id;
-          console.log("Kategori adına göre ID bulundu:", categoryId);
-        } else {
-          console.warn("Kategori adına göre ID bulunamadı:", category);
-        }
+      // Temel ürün bilgilerini ekle
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('price', onlyForTrade ? 0 : price);
+      formData.append('category', category);
+      formData.append('condition', condition);
+      formData.append('location', location);
+      formData.append('acceptsTradeOffers', acceptsTradeOffers);
+      formData.append('status', status);
+      
+      if (Object.keys(attributes).length > 0) {
+        formData.append('attributes', JSON.stringify(attributes));
       }
       
-      if (isEditing) {
-        // Ürün güncelleme - önce sadece metin alanlarıyla deneyeceğiz
-        try {
-          // Sadece metin alanlarını içeren JSON verisi gönder
-          const basicData = {
-            title: title,
-            description: description,
-            price: onlyForTrade ? 0 : parseFloat(price),
-            category: categoryId, // Düzeltilmiş kategori ID'sini kullan
-            condition: condition,
-            location: location,
-            acceptsTradeOffers: acceptsTradeOffers,
-            status: status
-          };
-          
-          console.log("Updating with basic data only:", basicData);
-          console.log("Category value being sent:", {
-            original: category,
-            corrected: categoryId,
-            type: typeof categoryId,
-            isMongoId: /^[0-9a-fA-F]{24}$/.test(categoryId)
-          });
-          
-          await productService.updateProduct(id, basicData);
-          setSuccess(true);
-          window.scrollTo(0, 0);
-          setTimeout(() => navigate(`/products/${id}`), 2000);
-          return;
-        } catch (basicUpdateError) {
-          console.error("Basic update failed:", basicUpdateError);
-          // Hiçbir şey yapma, aşağıdaki koda devam et ve FormData ile dene
-        }
-        
-        // FormData yaklaşımını dene, ama görüntüleri hariç tut
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('price', onlyForTrade ? '0' : price);
-        formData.append('category', categoryId); // Düzeltilmiş kategori ID'sini kullan
-        formData.append('condition', condition);
-        formData.append('location', location);
-        formData.append('acceptsTradeOffers', acceptsTradeOffers.toString());
-        formData.append('status', status);
-        
-        // ⚠️ ÖNEMLİ: Görüntüleri eklemiyoruz - Backend'deki 500 hatası muhtemelen görüntü işlemeyle ilgili
-        
-        console.log("Trying FormData without images");
-        await productService.updateProduct(id, formData);
-        setSuccess(true);
-        window.scrollTo(0, 0);
-        setTimeout(() => navigate(`/products/${id}`), 2000);
-      } else {
-        // Yeni ürün ekleme - normal süreci izle
-        const formData = new FormData();
-        formData.append('title', title);
-        formData.append('description', description);
-        formData.append('price', onlyForTrade ? '0' : price);
-
-        // Log selected category ID
-        console.log("Seçilen kategori ID:", categoryId);
-        
-        formData.append('category', categoryId); // Düzeltilmiş kategori ID'sini kullan
-        formData.append('condition', condition);
-        formData.append('location', location);
-        formData.append('acceptsTradeOffers', acceptsTradeOffers.toString());
-        formData.append('status', status);
-        
-        // Resim dosyaları ekleme
-        console.log("UPLOAD: Adding images to form data. Count:", imageFiles.length);
-        if (imageFiles.length === 0) {
-          console.warn("UPLOAD: No image files to upload!");
-        }
-        
+      // Mevcut resimleri ekle (eğer düzenleme modundaysa)
+      if (isEditing && images && images.length > 0) {
+        formData.append('existingImages', JSON.stringify(images));
+      }
+      
+      // Yeni resimleri ekle
+      if (imageFiles.length > 0) {
+        console.log(`Appending ${imageFiles.length} images to FormData`);
         imageFiles.forEach((file, index) => {
-          console.log(`UPLOAD: Adding image ${index + 1}:`, file.name, file.type, file.size);
-          // Önemli: Tüm dosyalar 'images' adıyla eklenmelidir (backend'de bu adı bekliyor)
+          console.log(`Adding image ${index + 1}:`, file.name, file.type, file.size);
           formData.append('images', file);
         });
-        
-        // Form verilerini kontrol et
-        console.log("UPLOAD: FormData entries:");
-        for (let pair of formData.entries()) {
-          const valueDisplay = pair[1] instanceof File ? 
-            `[File: ${pair[1].name}, ${pair[1].type}, ${pair[1].size} bytes]` : 
-            pair[1];
-          console.log(`UPLOAD: ${pair[0]} = ${valueDisplay}`);
-        }
-        
-        try {
-          console.log("UPLOAD: Creating new product with FormData");
-          console.log("UPLOAD: Kategori formda:", formData.get('category'));
-          console.log("UPLOAD: Tüm form alanları:", {
-            title: formData.get('title'),
-            description: formData.get('description'),
-            price: formData.get('price'),
-            category: formData.get('category'),
-            condition: formData.get('condition'),
-            location: formData.get('location')
-          });
-          
-          const response = await productService.createProduct(formData);
-          console.log("UPLOAD: Product created successfully:", response);
-          
-          // Yanıtı kontrol et
-          if (response && response.data) {
-            console.log("UPLOAD: New product data:", response.data);
-            console.log("UPLOAD: Images in the response:", 
-              response.data.images || response.data.data?.images || "No images in response");
-            
-            // Eklenen ürünün kategori ID'si
-            const addedProduct = response.data.data || response.data;
-            if (addedProduct) {
-              console.log("UPLOAD: Eklenen ürün kategori ID'si:", 
-                addedProduct.category?._id || addedProduct.category || "Kategori ID bulunamadı");
-            }
-          }
-          
-          setSuccess(true);
-          window.scrollTo(0, 0);
-          // Make sure to redirect to products page, not profile
-          setTimeout(() => {
-            console.log('Redirecting to products page');
-            navigate('/products');
-          }, 2000);
-        } catch (apiError) {
-          console.error("UPLOAD: API error during product creation:", apiError);
-          if (apiError.response) {
-            console.error("UPLOAD: Server response:", apiError.response.data);
-          }
-          throw apiError; // Üst seviye hata yakalama için yeniden fırlat
+      } else {
+        console.log('No new images to upload');
+      }
+      
+      // FormData içeriğini kontrol et (debug için)
+      console.log('FormData entries:');
+      for (let [key, value] of formData.entries()) {
+        if (key === 'images') {
+          console.log(`${key}: [File object]`);
+        } else if (key === 'existingImages') {
+          console.log(`${key}: JSON string of existing images`);
+        } else {
+          console.log(`${key}: ${value}`);
         }
       }
+      
+      console.log('Submitting product data with FormData');
+      
+      let response;
+      if (isEditing) {
+        response = await productService.updateProduct(id, formData);
+      } else {
+        response = await productService.createProduct(formData);
+      }
+      
+      // Handle different API response formats
+      let productData = null;
+      if (response?.data?.data) {
+        productData = response.data.data;
+      } else if (response?.data) {
+        productData = response.data;
+      } else if (response) {
+        productData = response;
+      }
+      
+      if (!productData) {
+        throw new Error("Ürün kayıt sonucu alınamadı");
+      }
+      
+      console.log('Product saved successfully:', productData);
+      
+      setSuccess(true);
+      setTimeout(() => {
+        navigate(`/products/${productData._id || productData.id}`);
+      }, 1500);
     } catch (err) {
-      console.error("Product operation error:", err);
-      console.error("Error details:", err.response?.data || err.message);
-      
-      // Detaylı hata mesajı göster
-      let errorMessage = `Ürün ${isEditing ? 'güncellenirken' : 'eklenirken'} bir hata oluştu.`;
-      if (err.response?.data?.error?.message) {
-        errorMessage += ` Hata detayı: ${err.response.data.error.message}`;
-      }
-      
-      setError(errorMessage);
+      console.error('Form submission error:', err);
+      setError(err?.response?.data?.message || 'Ürün kaydedilemedi. Lütfen tekrar deneyin.');
     } finally {
       setSubmitLoading(false);
     }
@@ -491,236 +461,219 @@ const ProductForm = () => {
   
   return (
     <Container className="py-4">
-      <h1 className="mb-4">{isEditing ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h1>
-      
-      {success && (
-        <Alert variant="success">
-          Ürün başarıyla {isEditing ? 'güncellendi' : 'eklendi'}!
-        </Alert>
-      )}
-      
-      {error && (
-        <Alert variant="danger">{error}</Alert>
-      )}
-      
+      <Row className="justify-content-center">
+        <Col md={10}>
       <Card>
+            <Card.Header>
+              <h4>{isEditing ? 'Ürünü Düzenle' : 'Yeni Ürün Ekle'}</h4>
+            </Card.Header>
         <Card.Body>
+              {error && <Alert variant="danger">{error}</Alert>}
+              {success && <Alert variant="success">Ürün başarıyla {isEditing ? 'güncellendi' : 'oluşturuldu'}!</Alert>}
+              
           <Form onSubmit={handleSubmit}>
-            <Row>
-              <Col md={8}>
-                {/* Title */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Ürün Adı*</Form.Label>
+                  <Form.Label>Başlık</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Ürünün adını girin"
+                    placeholder="Ürün başlığı"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
                   />
                 </Form.Group>
                 
-                {/* Description */}
+                {/* Resim Yükleme */}
                 <Form.Group className="mb-3">
-                  <Form.Label>Ürün Açıklaması*</Form.Label>
+                  <Form.Label>Ürün Resimleri</Form.Label>
+                  <Form.Control
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="mb-2"
+                  />
+                  <Form.Text className="text-muted">
+                    En fazla 5 resim yükleyebilirsiniz. Her resim maksimum 5MB olmalıdır.
+                  </Form.Text>
+                  
+                  {/* Resim Önizlemeleri */}
+                  {imagePreviewUrls.length > 0 && (
+                    <div className="mt-3">
+                      <Row>
+                        {imagePreviewUrls.map((url, index) => (
+                          <Col key={index} xs={6} md={3} className="mb-3">
+                            <div className="position-relative">
+                              <img
+                                src={url}
+                                alt={`Önizleme ${index + 1}`}
+                                className="img-fluid rounded"
+                                style={{ width: '100%', height: '150px', objectFit: 'cover' }}
+                              />
+                              <Button
+                                variant="danger"
+                                size="sm"
+                                className="position-absolute top-0 end-0 m-1"
+                                onClick={() => handleRemoveImage(index)}
+                                style={{ padding: '2px 6px' }}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          </Col>
+                        ))}
+                      </Row>
+                    </div>
+                  )}
+                </Form.Group>
+                
+                    <Form.Group className="mb-3">
+                  <Form.Label>Kategori</Form.Label>
+                      <Form.Select
+                        value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                        required
+                      >
+                        <option value="">Kategori Seçin</option>
+                    {categories
+                      .filter(cat => {
+                        // Konsola her kategori adını yazdır (debug için)
+                        const catName = cat.name || '';
+                        console.log(`Kategori adı ve ID: "${catName}" - ${cat._id}`);
+                        
+                        // Gizlenecek kategorilerin adları - tam olarak eşleşecek şekilde
+                        const hiddenCategories = [
+                          'Aydınlatma', 
+                          'Bahçe', 
+                          'Diğer', 
+                          'Fotoğraf ve Kamera', 
+                          'Otomotiv Parçaları',
+                          'Otomobil ve Parçaları',
+                          'Elektronik',
+                          // 'Giyim' - Erkek Giyim ve Kadın Giyim kategorilerinin gösterilmesi için kaldırıldı
+                          'Ev Eşyaları'
+                        ];
+                        
+                        // Kelime bazlı kontrolü de ekleyelim
+                        const containsHiddenKeyword = (name) => {
+                          const keywords = ['Otomobil', 'Otomotiv', 'Aydınlatma', 'Bahçe', 'Fotoğraf', 'Kamera', 'Elektronik', 'Ev Eşyaları'];
+                          // 'Giyim' kelimesi kaldırıldı, böylece 'Erkek Giyim' ve 'Kadın Giyim' gösterilecek
+                          return keywords.some(keyword => name.includes(keyword));
+                        };
+                        
+                        // Karar sürecini detaylı loglayalım
+                        const isHidden = hiddenCategories.includes(catName);
+                        const containsKeyword = containsHiddenKeyword(catName);
+                        
+                        console.log(`  - "${catName}": Tam eşleşme: ${isHidden}, Keyword içeriyor: ${containsKeyword}`);
+                        
+                        // Doğrudan bu ID'yi kontrol edelim
+                        if (cat._id === "68137ab1358c748f63723fda") {
+                          console.log(`  - ID'si "68137ab1358c748f63723fda" olan kategori bulundu: "${catName}"`);
+                          return false; // Bu ID'yi de gizle
+                        }
+                        
+                        // Tam ad kontrolü veya kelime bazlı kontrol
+                        return !isHidden && !containsKeyword;
+                      })
+                      .map((cat) => (
+                      <option key={cat._id} value={cat._id}>
+                              {cat.name}
+                            </option>
+                    ))}
+                      </Form.Select>
+                    </Form.Group>
+                
+                {/* Kategori bazlı özellikler - Sadece AI tahmini için */}
+                {/* Bu bölüm kaldırıldı - artık PricePrediction bileşeninde gösterilecek */}
+                  
+                    <Form.Group className="mb-3">
+                  <Form.Label>Ürün Durumu</Form.Label>
+                      <Form.Select
+                        value={condition}
+                        onChange={(e) => setCondition(e.target.value)}
+                        required
+                      >
+                    <option value="Yeni">Yeni</option>
+                        <option value="Yeni Gibi">Yeni Gibi</option>
+                        <option value="İyi">İyi</option>
+                    <option value="Makul">Makul</option>
+                        <option value="Kötü">Kötü</option>
+                      </Form.Select>
+                    </Form.Group>
+                
+                {/* Yapay zeka fiyat tahmini */}
+                {showPricePrediction && (
+                  <>
+                    <hr />
+                    {success && (
+                      <Alert variant="success" className="mb-3">
+                        ✅ Tahmini fiyat ürün fiyatına uygulandı!
+                      </Alert>
+                    )}
+                  <PricePrediction 
+                    productData={{
+                      title,
+                      description,
+                      category,
+                      categoryName: categories.find(cat => cat._id === category)?.name || '',
+                      condition,
+                      attributes
+                    }}
+                    onPredictionComplete={handlePricePredict}
+                  />
+                    <hr />
+                  </>
+                )}
+                
+                <Form.Group className="mb-3">
+                  <Form.Check
+                    type="checkbox"
+                    id="onlyForTrade"
+                    label="Sadece Takas - Fiyat Belirtme"
+                    checked={onlyForTrade}
+                    onChange={(e) => setOnlyForTrade(e.target.checked)}
+                  />
+                </Form.Group>
+                
+                {!onlyForTrade && (
+                  <Form.Group className="mb-3">
+                    <Form.Label>Fiyat (₺)</Form.Label>
+                    <Form.Control
+                      type="number"
+                      placeholder="Fiyat"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      required={!onlyForTrade}
+                    />
+                  </Form.Group>
+                )}
+                
+                <Form.Group className="mb-3">
+                  <Form.Label>Açıklama</Form.Label>
                   <Form.Control
                     as="textarea"
                     rows={5}
-                    placeholder="Ürün hakkında detaylı bilgi verin"
+                    placeholder="Ürün açıklaması"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     required
                   />
                 </Form.Group>
                 
-                <Row>
-                  {/* Price */}
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Fiyat (₺)</Form.Label>
-                      <Form.Control
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        placeholder="Ürün fiyatı"
-                        value={price}
-                        onChange={(e) => setPrice(e.target.value)}
-                        disabled={onlyForTrade}
-                      />
-                    </Form.Group>
-                  </Col>
-                  
-                  <Col md={6}>
-                    <Form.Group className="mb-3 mt-4">
-                      <Form.Check
-                        type="checkbox"
-                        id="onlyForTrade"
-                        label="Sadece Takas İçin"
-                        checked={onlyForTrade}
-                        onChange={(e) => {
-                          setOnlyForTrade(e.target.checked);
-                          if (e.target.checked) {
-                            setPrice('');
-                            setAcceptsTradeOffers(true);
-                          }
-                        }}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
-                
-                {/* Takas Kabul Edilir */}
                 <Form.Group className="mb-3">
-                  <Form.Check
-                    type="checkbox"
-                    id="acceptsTradeOffers"
-                    label="Takas Kabul Edilir"
-                    checked={acceptsTradeOffers}
-                    onChange={(e) => setAcceptsTradeOffers(e.target.checked)}
-                  />
-                  <Form.Text className="text-muted">
-                    Diğer kullanıcılar bu ürün için takas teklifi gönderebilir.
-                  </Form.Text>
-                </Form.Group>
-                
-                <Row>
-                  {/* Category */}
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Kategori*</Form.Label>
-                      <Form.Select
-                        value={category}
-                        onChange={(e) => {
-                          console.log("Kategori değişti. Seçilen:", e.target.value);
-                          setCategory(e.target.value);
-                        }}
-                        required
-                      >
-                        <option value="">Kategori Seçin</option>
-                        {Array.isArray(categories) && categories.length > 0 ? (
-                          categories.map(cat => {
-                            // Kategori ID'sini log
-                            console.log(`Kategori option: ${cat.name}, ID: ${cat._id}`);
-                            return (
-                            <option key={cat._id || cat.id} value={cat._id || cat.id}>
-                              {cat.name}
-                            </option>
-                            );
-                          })
-                        ) : (
-                          <option value="" disabled>Kategoriler yüklenemedi</option>
-                        )}
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                  
-                  {/* Condition */}
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Ürün Durumu*</Form.Label>
-                      <Form.Select
-                        value={condition}
-                        onChange={(e) => setCondition(e.target.value)}
-                        required
-                      >
-                        <option value="Yeni">Sıfır</option>
-                        <option value="Yeni Gibi">Yeni Gibi</option>
-                        <option value="İyi">İyi</option>
-                        <option value="Makul">Orta</option>
-                        <option value="Kötü">Kötü</option>
-                      </Form.Select>
-                    </Form.Group>
-                  </Col>
-                </Row>
-                
-                {/* Location */}
-                <Form.Group className="mb-3">
-                  <Form.Label>Konum*</Form.Label>
+                  <Form.Label>Konum</Form.Label>
                   <Form.Control
                     type="text"
-                    placeholder="Ürün konumu (Şehir, İlçe vb.)"
+                    placeholder="Şehir, ilçe (ör. İstanbul, Kadıköy)"
                     value={location}
                     onChange={(e) => setLocation(e.target.value)}
                     required
                   />
                 </Form.Group>
                 
-                {/* Status - only show for editing */}
-                {isEditing && (
-                  <Form.Group className="mb-3">
-                    <Form.Label>Ürün Durumu</Form.Label>
-                    <Form.Select
-                      value={status}
-                      onChange={(e) => setStatus(e.target.value)}
-                    >
-                      <option value="active">Aktif</option>
-                      <option value="sold">Satıldı</option>
-                      <option value="reserved">Rezerve</option>
-                      <option value="inactive">Pasif</option>
-                    </Form.Select>
-                  </Form.Group>
-                )}
-              </Col>
-              
-              <Col md={4}>
-                {/* Images */}
-                <Form.Group className="mb-3">
-                  <Form.Label>Ürün Resimleri*</Form.Label>
-                  <div className="mb-2">
-                    <small className="text-muted">
-                      En fazla 5 resim ekleyebilirsiniz. Her resim 5MB'dan küçük olmalıdır.
-                    </small>
-                  </div>
-                  
-                  <div className="mb-3">
-                    <Button
-                      variant="outline-primary"
-                      onClick={() => document.getElementById('imageInput').click()}
-                      disabled={imagePreviewUrls.length >= 5}
-                    >
-                      Resim Seç
-                    </Button>
-                    <Form.Control
-                      id="imageInput"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={handleImageChange}
-                      style={{ display: 'none' }}
-                    />
-                  </div>
-                  
-                  {/* Image Previews */}
-                  {imagePreviewUrls.length > 0 && (
-                    <div className="image-preview-container">
-                      {imagePreviewUrls.map((url, index) => (
-                        <div key={index} className="image-preview-item mb-2">
-                          <img
-                            src={url}
-                            alt={`Preview ${index + 1}`}
-                            className="img-thumbnail"
-                          />
-                          <Button
-                            variant="danger"
-                            size="sm"
-                            className="remove-image-btn"
-                            onClick={() => handleRemoveImage(index)}
-                          >
-                            <i className="bi bi-x"></i>
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </Form.Group>
-              </Col>
-            </Row>
-            
-            <div className="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-              <Button
-                variant="secondary"
-                onClick={() => navigate(isEditing ? `/products/${id}` : '/profile')}
-              >
+                <div className="mt-4 d-flex justify-content-between">
+                  <Button variant="secondary" onClick={() => navigate(-1)}>
                 İptal
               </Button>
               <Button
@@ -738,16 +691,18 @@ const ProductForm = () => {
                       aria-hidden="true"
                       className="me-2"
                     />
-                    {isEditing ? 'Güncelleniyor...' : 'Kaydediliyor...'}
+                        {isEditing ? 'Güncelleniyor...' : 'Oluşturuluyor...'}
                   </>
                 ) : (
-                  isEditing ? 'Ürünü Güncelle' : 'Ürünü Kaydet'
+                      isEditing ? 'Ürünü Güncelle' : 'Ürünü Oluştur'
                 )}
               </Button>
             </div>
           </Form>
         </Card.Body>
       </Card>
+        </Col>
+      </Row>
     </Container>
   );
 };

@@ -14,6 +14,21 @@ const mongoose = require('mongoose');
  */
 const createProduct = async (req, res, next) => {
     try {
+        console.log("createProduct called with body:", JSON.stringify(req.body, null, 2));
+        console.log("Files received:", req.files ? req.files.length : 'No files');
+        
+        if (req.files && req.files.length > 0) {
+            req.files.forEach((file, index) => {
+                console.log(`File ${index + 1}:`, {
+                    originalname: file.originalname,
+                    mimetype: file.mimetype,
+                    size: file.size,
+                    buffer: file.buffer ? 'Buffer present' : 'No buffer',
+                    fieldname: file.fieldname
+                });
+            });
+        }
+        
         const { 
             title, 
             description, 
@@ -105,7 +120,13 @@ const createProduct = async (req, res, next) => {
             const validImages = fileImages.filter(img => img !== null);
             console.log(`Successfully processed ${validImages.length} of ${req.files.length} files`);
             
+            // Yeni resimleri ekle - bu kısmı değiştirdim, önceki resimleri silmiyoruz
             processedImages = [...processedImages, ...validImages];
+            
+            // Debug için resim URL'lerini logla
+            processedImages.forEach((img, index) => {
+                console.log(`Image ${index + 1} in final list:`, img.url);
+            });
         } else {
             console.log("No files found in request");
         }
@@ -364,6 +385,12 @@ const getProducts = async (req, res, next) => {
                 case 'views':
                     sortOptions = { views: -1 };
                     break;
+                case 'createdAt':
+                    sortOptions = { createdAt: 1 }; // En eski ürünler önce
+                    break;
+                case '-createdAt':
+                    sortOptions = { createdAt: -1 }; // En yeni ürünler önce
+                    break;
             }
         }
         
@@ -588,6 +615,22 @@ const updateProduct = async (req, res, next) => {
     try {
         const { id } = req.params;
         
+        console.log("updateProduct called for ID:", id);
+        console.log("Request body:", JSON.stringify(req.body, null, 2));
+        console.log("Files received:", req.files ? req.files.length : 'No files');
+        
+        if (req.files && req.files.length > 0) {
+            req.files.forEach((file, index) => {
+                console.log(`File ${index + 1}:`, {
+                    originalname: file.originalname,
+                    mimetype: file.mimetype,
+                    size: file.size,
+                    buffer: file.buffer ? 'Buffer present' : 'No buffer',
+                    fieldname: file.fieldname
+                });
+            });
+        }
+        
         // Ürünü bul
         const product = await Product.findById(id);
         
@@ -686,13 +729,49 @@ const updateProduct = async (req, res, next) => {
         if (req.files && Array.isArray(req.files) && req.files.length > 0) {
             console.log("Adding new file images:", req.files.length);
             
-            const fileImages = req.files.map((file, index) => ({
-                url: file.url,  // Artık doğrudan url mevcut
-                filename: file.filename,
-                isCover: processedImages.length === 0 && index === 0 // Resim yoksa kapak olarak işaretle
-            }));
+            const filePromises = req.files.map(async (file, index) => {
+                try {
+                    console.log(`Processing file ${index + 1}: ${file.originalname}, ${file.mimetype}, ${file.size} bytes`);
+                    
+                    // Eğer dosya zaten URL içeriyorsa
+                    if (file.url) {
+                        console.log(`File ${index + 1} already has URL:`, file.url);
+                        return {
+                            url: file.url,
+                            filename: file.filename,
+                            isCover: processedImages.length === 0 && index === 0 // Resim yoksa kapak olarak işaretle
+                        };
+                    }
+                    
+                    // Yerel depolama ile resmi kaydet
+                    const result = await saveBufferImage(file.buffer, file.mimetype);
+                    console.log(`File ${index + 1} processed:`, result);
+                    
+                    return {
+                        url: result.url,
+                        filename: result.filename,
+                        isCover: processedImages.length === 0 && index === 0 // Daha önce resim yoksa ilk dosya kapak
+                    };
+                } catch (error) {
+                    console.error(`Error processing file ${index + 1}:`, error);
+                    return null;
+                }
+            });
             
-            processedImages = [...processedImages, ...fileImages];
+            const fileImages = await Promise.all(filePromises);
+            const validImages = fileImages.filter(img => img !== null);
+            console.log(`Successfully processed ${validImages.length} of ${req.files.length} files`);
+            
+            // Mevcut resimlere yeni resimleri ekle
+            processedImages = [...processedImages, ...validImages];
+            
+            // Debug için resim URL'lerini logla
+            console.log("Final processed images list:");
+            processedImages.forEach((img, index) => {
+                console.log(`Image ${index + 1}:`, img.url || img.filename || 'No URL');
+            });
+        } else {
+            console.log("No files found in request");
         }
         
         // En az bir resim olmasını sağla

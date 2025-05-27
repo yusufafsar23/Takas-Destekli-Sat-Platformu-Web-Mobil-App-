@@ -42,7 +42,7 @@ export default function RegisterScreen() {
     }
 
     try {
-      await register({
+      const response = await register({
         username,
         email,
         password,
@@ -51,8 +51,11 @@ export default function RegisterScreen() {
       });
       Alert.alert(
         'Kayıt Başarılı', 
-        'Hesabınız oluşturuldu. Lütfen e-posta adresinizi doğrulayın.',
-        [{ text: 'Tamam', onPress: () => router.replace('/(tabs)') }]
+        'Hesabınız oluşturuldu. Lütfen e-posta adresinize gönderilen doğrulama kodunu giriniz.',
+        [{ text: 'Doğrulama Sayfasına Git', onPress: () => router.push({
+          pathname: '/verify-email',
+          params: { email }
+        })}]
       );
     } catch (error) {
       Alert.alert('Kayıt Hatası', error.message);

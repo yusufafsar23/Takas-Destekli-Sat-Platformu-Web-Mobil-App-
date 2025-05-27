@@ -623,6 +623,84 @@ const ProductDetailScreen = ({ route, navigation }) => {
         <Text style={styles.sectionTitle}>Açıklama</Text>
         <Text style={styles.description}>{product.description || 'Açıklama yok'}</Text>
         
+        {/* Ürün Özellikleri Bölümü */}
+        {product.attributes && Object.keys(product.attributes).length > 0 && (
+          <>
+            <View style={styles.divider} />
+            <Text style={styles.sectionTitle}>📋 Ürün Özellikleri</Text>
+            <View style={styles.attributesContainer}>
+              {Object.entries(product.attributes).map(([key, value], index) => {
+                // Boş değerleri atla
+                if (!value || value === '' || value === null || value === undefined) {
+                  return null;
+                }
+                
+                // Özellik adını Türkçe'ye çevir
+                const getAttributeLabel = (key) => {
+                  const attributeLabels = {
+                    'storage': 'Hafıza',
+                    'ram': 'RAM',
+                    'battery_health': 'Batarya Sağlığı',
+                    'has_warranty': 'Garanti',
+                    'is_original': 'Orijinallik',
+                    'hygiene_status': 'Hijyen Durumu',
+                    'cleanliness': 'Temizlik Durumu',
+                    'is_handmade': 'El Yapımı',
+                    'product_type': 'Ürün Tipi',
+                    'release_year': 'Baskı Yılı',
+                    'is_rare': 'Nadirlik',
+                    'usage_duration': 'Kullanım Süresi',
+                    'material_quality': 'Malzeme Kalitesi',
+                    'piece_count': 'Parça Sayısı',
+                    'channel_count': 'Kanal Sayısı',
+                    'connection_type': 'Bağlantı Tipi',
+                    'screen_size': 'Ekran Boyutu',
+                    'is_smart': 'Smart TV',
+                    'has_remote': 'Kumanda',
+                    'fabric_type': 'Kumaş Türü',
+                    'brand': 'Marka',
+                    'model': 'Model',
+                    'year': 'Yıl',
+                    'color': 'Renk',
+                    'size': 'Beden/Boyut',
+                    'material': 'Malzeme'
+                  };
+                  return attributeLabels[key] || key.charAt(0).toUpperCase() + key.slice(1);
+                };
+                
+                // Değeri formatla
+                const formatAttributeValue = (key, value) => {
+                  if (key === 'battery_health') {
+                    return `%${value}`;
+                  } else if (key === 'storage') {
+                    return `${value} GB`;
+                  } else if (key === 'ram') {
+                    return `${value} GB`;
+                  } else if (key === 'screen_size') {
+                    return `${value} inch`;
+                  } else if (key === 'usage_duration') {
+                    return `${value} yıl`;
+                  } else if (key === 'piece_count') {
+                    return `${value} adet`;
+                  } else if (key === 'has_warranty' || key === 'is_original' || key === 'is_handmade' || key === 'is_smart' || key === 'has_remote') {
+                    return value === true || value === 'true' || value === 'Var' || value === 'Evet' ? 'Evet' : 'Hayır';
+                  } else if (key === 'release_year' || key === 'year') {
+                    return value;
+                  }
+                  return value;
+                };
+                
+                return (
+                  <View key={index} style={styles.attributeItem}>
+                    <Text style={styles.attributeLabel}>{getAttributeLabel(key)}:</Text>
+                    <Text style={styles.attributeValue}>{formatAttributeValue(key, value)}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          </>
+        )}
+        
         {(product.tradePreferences || product.acceptsTradeOffers || product.tradeOnly) && (
           <>
             <View style={styles.divider} />
@@ -954,6 +1032,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
+  },
+  attributesContainer: {
+    marginTop: 5,
+  },
+  attributeItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  attributeLabel: {
+    fontSize: 14,
+    color: '#666',
+  },
+  attributeValue: {
+    fontSize: 14,
+    color: '#333',
   },
 });
 

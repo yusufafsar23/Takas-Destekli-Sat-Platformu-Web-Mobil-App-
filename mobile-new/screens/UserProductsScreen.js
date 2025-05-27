@@ -7,7 +7,9 @@ import {
   ActivityIndicator, 
   TouchableOpacity,
   Alert,
-  RefreshControl
+  RefreshControl,
+  SafeAreaView,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '../components/Card';
@@ -226,21 +228,40 @@ const UserProductsScreen = ({ route, navigation }) => {
             style: 'destructive',
             onPress: async () => {
               try {
+                setLoading(true);
                 // Ürünü sil
                 const response = await productService.deleteProduct(productId);
                 
-                if (response && (response.success || response.status === 200)) {
+                // API yanıtı başarılı olduğunda veya yanıt boş olduğunda (204 No Content)
+                // Bazı API'ler silme işlemi başarılı olduğunda boş yanıt döndürebilir
+                if (response === undefined || response === null || response === '' || 
+                    response.success || response.status === 200 || response.status === 204) {
                   // Başarılı silme işlemi
                   Alert.alert('Başarılı', 'Ürün başarıyla silindi.');
                   // Listeyi yenile
                   fetchProducts();
+                } else if (response.error || response.message) {
+                  // API'den gelen hata mesajı varsa göster
+                  Alert.alert('Hata', response.message || 'Ürün silinirken bir hata oluştu. Lütfen tekrar deneyin.');
                 } else {
-                  // Başarısız silme işlemi
-                  Alert.alert('Hata', 'Ürün silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                  console.log('Silme işlemi yanıtı:', response);
+                  // Ürünün gerçekten silinip silinmediğini kontrol etmek için listeyi yenile
+                  fetchProducts();
+                  Alert.alert('Bilgi', 'İşlem tamamlandı. Ürün listesi güncellendi.');
                 }
               } catch (error) {
                 console.error('Ürün silme hatası:', error);
-                Alert.alert('Hata', 'Ürün silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                
+                // Hata mesajını kontrol et
+                if (error.response && error.response.status === 404) {
+                  // Ürün zaten silinmiş veya bulunamıyor, bu durumda başarılı sayılabilir
+                  Alert.alert('Bilgi', 'Ürün listeden kaldırıldı.');
+                  fetchProducts(); // Listeyi güncelle
+                } else {
+                  Alert.alert('Hata', 'Ürün silinirken bir hata oluştu. Lütfen tekrar deneyin.');
+                }
+              } finally {
+                setLoading(false);
               }
             }
           }
@@ -294,17 +315,17 @@ const UserProductsScreen = ({ route, navigation }) => {
   return (
     <View style={styles.container}>
       {/* Header with title and possibly add button */}
-      <View style={styles.header}>
+      <SafeAreaView style={styles.header}>
         <Text style={styles.headerTitle}>
           {isCurrentUser ? 'Ürünlerim' : 'Kullanıcının Ürünleri'}
         </Text>
         
         {isCurrentUser && (
           <TouchableOpacity style={styles.addButton} onPress={handleAddProduct}>
-            <Ionicons name="add-circle" size={24} color="#FF6B6B" />
+            <Ionicons name="add-circle" size={24} color="#fff" />
           </TouchableOpacity>
         )}
-      </View>
+      </SafeAreaView>
       
       {/* Products list */}
       {products.length === 0 ? (
@@ -353,15 +374,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    backgroundColor: '#FF6B6B',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
+    paddingTop: Platform.OS === 'ios' ? 10 : 40,
+    paddingBottom: 16,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   addButton: {
     padding: 5,

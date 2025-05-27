@@ -82,11 +82,16 @@ const Register = () => {
       
       console.log('Kayıt verileri:', registerData); // Debug için
       
-      await register(registerData);
-      navigate('/');
+      const response = await register(registerData);
+      
+      // Kayıt başarılı olursa, doğrulama sayfasına yönlendir
+      navigate('/verify-email', { 
+        state: { email: formData.email },
+        replace: true 
+      });
     } catch (err) {
       console.error('Kayıt hatası:', err); // Debug için
-      setApiError(err.response?.data?.message || 'Kayıt yapılamadı. Lütfen tekrar deneyin.');
+      setApiError(err.response?.data?.error || err.response?.data?.message || 'Kayıt yapılamadı. Lütfen tekrar deneyin.');
     }
   };
 

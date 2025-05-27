@@ -434,17 +434,26 @@ const ProfileScreen = ({ route, navigation }) => {
   const formatUserName = (user) => {
     if (!user) return 'Kullanıcı';
     
-    // Ad ve soyadını almaya çalış
-    const fullName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim();
-    
     // Eğer fullName varsa onu kullan
-    if (fullName && fullName !== '') {
-      return fullName;
+    if (user.fullName && user.fullName.trim() !== '') {
+      return user.fullName;
+    }
+    
+    // Ad ve soyadını birleştir
+    if (user.firstName || user.lastName) {
+      return `${user.firstName || ''} ${user.lastName || ''}`.trim();
     }
     
     // Sadece name varsa onu kullan
     if (user.name && user.name !== '') {
-      return user.name;
+      // Adı ve soyadını boşluğa göre ayır, ilk kelimeyi ve son kelimeyi al
+      const nameParts = user.name.split(' ');
+      if (nameParts.length >= 2) {
+        return user.name; // Zaten ad soyad formatında
+      } else {
+        // Tek kelime varsa, sadece adı göster
+        return user.name;
+      }
     }
     
     // Kullanıcı adı/email çıkarma dene
@@ -625,7 +634,7 @@ const ProfileScreen = ({ route, navigation }) => {
           <Ionicons name="person-outline" size={18} color="#666" style={styles.infoIcon} />
           <Text style={styles.infoLabel}>İsim Soyisim:</Text>
           <Text style={styles.infoValue}>
-            {user?.name || formatUserName(user)}
+            {formatUserName(user)}
           </Text>
         </View>
         

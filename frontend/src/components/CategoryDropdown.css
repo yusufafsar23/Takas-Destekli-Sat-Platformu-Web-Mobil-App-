@@ -20,8 +20,8 @@
 }
 
 .category-link:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
 }
 
 .category-icon {
@@ -44,6 +44,8 @@
   margin-bottom: 0.5rem;
 }
 
+/* Alt kategori stilleri kaldırıldı */
+/*
 .subcategories-dropdown {
   position: absolute;
   top: 100%;
@@ -83,6 +85,7 @@
   background-color: #f8f9fa;
   color: #0d6efd;
 }
+*/
 
 .category-icon-emoji {
   font-size: 2.5rem;
@@ -90,25 +93,14 @@
 }
 
 @media (max-width: 768px) {
+  /* Alt kategori stilleri kaldırıldı */
+  /*
   .subcategories-dropdown {
     position: relative;
     margin-top: 10px;
     max-height: 300px;
     border-radius: 8px;
     border-top: 1px solid #eee;
-  }
-  
-  .category-link {
-    padding: 15px 10px;
-  }
-  
-  .category-link:hover {
-    transform: none;
-    box-shadow: none;
-  }
-  
-  .category-link:active {
-    background-color: #f8f9fa;
   }
   
   .subcategory-link {
@@ -121,5 +113,19 @@
   
   .subcategory-item:active {
     background-color: #f0f8ff;
+  }
+  */
+  
+  .category-link {
+    padding: 15px 10px;
+  }
+  
+  .category-link:hover {
+    transform: none;
+    box-shadow: none;
+  }
+  
+  .category-link:active {
+    background-color: #f8f9fa;
   }
 } 

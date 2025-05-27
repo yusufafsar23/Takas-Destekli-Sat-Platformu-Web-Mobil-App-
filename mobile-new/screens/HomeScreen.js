@@ -8,12 +8,14 @@ import {
   Image, 
   RefreshControl,
   Switch,
-  FlatList
+  FlatList,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Card, Banner, CategoryCard } from '../components';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../context/AuthContext.jsx';
 import { api } from '../services/api';
 import { getProductImageUrl } from '../services/imageHelper';
 import { bannerColors, categoryColors } from '../assets/images/images';
@@ -142,12 +144,12 @@ const allCategories = [
   },
   {
     id: 'sports',
-    name: 'Spor',
+    name: 'Spor ve Outdoor',
     icon: 'football',
-    slug: 'spor',
-    description: 'Spor ekipmanları ve giyim',
+    slug: 'spor-ve-outdoor',
+    description: 'Spor ekipmanları ve outdoor ürünleri',
     color: '#1E90FF', // Mavi
-    mongoId: '68137ab3358c748f63723fee' // Backend ID'si
+    mongoId: '68137ab0358c748f63723fd3' // Spor ve Outdoor Backend ID'si
   },
   {
     id: 'games',
@@ -175,6 +177,32 @@ const HomeScreen = ({ navigation }) => {
     setIsOfflineMode,
     forceOnlineMode
   } = useApp();
+
+  const { user, authState } = useAuth();
+
+  // E-posta doğrulama kontrolü
+  useEffect(() => {
+    const checkEmailVerification = async () => {
+      // Sadece email_verification_required durumunda doğrulama iste
+      if (authState === 'email_verification_required' && user && user.email) {
+        Alert.alert(
+          'E-posta Doğrulama Gerekli',
+          'Sisteme erişmek için e-posta adresinizi doğrulamanız gerekmektedir.',
+          [
+            {
+              text: 'Doğrula',
+              onPress: () => {
+                navigation.navigate('VerifyEmail', { email: user.email });
+              }
+            }
+          ],
+          { cancelable: false }
+        );
+      }
+    };
+    
+    checkEmailVerification();
+  }, [user, authState, navigation]);
 
   // İlk yüklemede online moda geçiş yap
   useEffect(() => {
@@ -395,6 +423,39 @@ const HomeScreen = ({ navigation }) => {
       if (categoryId === 'electronics' || categoryName.toLowerCase() === 'elektronik') {
         params.isElektronikFilter = true;
         console.log('Elektronik kategorisi için özel filtreleme parametresi eklendi');
+      }
+      
+      // Ev Eşyaları kategorisi için özel işlem
+      if (categoryId === 'home' || categoryName.toLowerCase() === 'ev eşyaları') {
+        params.isEvEsyalariFilter = true;
+        console.log('Ev Eşyaları kategorisi için özel filtreleme parametresi eklendi');
+      }
+      
+      // Giyim kategorisi için özel işlem
+      if (categoryId === 'fashion' || categoryName.toLowerCase() === 'giyim') {
+        params.isGiyimFilter = true;
+        console.log('Giyim kategorisi için özel filtreleme parametresi eklendi');
+      }
+      
+      // Kitap & Hobi kategorisi için özel işlem
+      if (categoryId === 'books' || categoryName.toLowerCase() === 'kitap & hobi' || categoryName.toLowerCase() === 'kitap ve hobi') {
+        params.isKitapHobiFilter = true;
+        console.log('Kitap & Hobi kategorisi için özel filtreleme parametresi eklendi');
+      }
+      
+      // Spor kategorisi için özel işlem
+      if (categoryId === 'sports' || 
+          categoryName.toLowerCase() === 'spor' || 
+          categoryName.toLowerCase() === 'spor ve outdoor' ||
+          categoryName.toLowerCase() === 'spor & outdoor') {
+        params.isSporFilter = true;
+        console.log('Spor ve Outdoor kategorisi için özel filtreleme parametresi eklendi');
+      }
+      
+      // Oyun & Konsol kategorisi için özel işlem
+      if (categoryId === 'games' || categoryName.toLowerCase() === 'oyun & konsol' || categoryName.toLowerCase() === 'oyun ve konsol') {
+        params.isOyunKonsolFilter = true;
+        console.log('Oyun & Konsol kategorisi için özel filtreleme parametresi eklendi');
       }
     }
     

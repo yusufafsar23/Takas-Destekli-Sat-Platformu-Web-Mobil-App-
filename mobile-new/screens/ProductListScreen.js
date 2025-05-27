@@ -47,44 +47,38 @@ const getCategoryName = (product) => {
 const CATEGORIES_WITH_SUBCATEGORIES = {
   // Elektronik kategorisi ve alt kategorileri
   '68137aaf358c748f63723fc9': [ // Elektronik
+    '68137ab2358c748f63723fe2', // Bilgisayarlar
     '68137ab2358c748f63723fe4', // Telefonlar
-    '68137ab2358c748f63723fe6', // Bilgisayarlar
-    '68137ab2358c748f63723fe7', // Televizyonlar
+    '68137ab2358c748f63723fe6', // Televizyonlar
     '68137ab2358c748f63723fe8'  // Ses Sistemleri
   ],
   // Ev Eşyaları kategorisi ve alt kategorileri
   '68137aaf358c748f63723fca': [ // Ev Eşyaları
-    '68137ab1358c748f63723fd1', // Mobilya
-    '68137ab1358c748f63723fd4', // Mutfak Eşyaları
-    '68137ab1358c748f63723fd6', // Yatak ve Banyo
-    '68137ab1358c748f63723fd2'  // Dekorasyon
+    '68137ab4358c748f63723ff6', // Mobilya
+    '68137ab4358c748f63723ff8', // Mutfak Eşyaları
+    '68137ab4358c748f63723ffa', // Yatak ve Banyo
+    '68137ab5358c748f63723ffc'  // Dekorasyon
   ],
   // Giyim kategorisi ve alt kategorileri
   '68137ab0358c748f63723fcb': [ // Giyim
-    '68137ab0358c748f63723fcd', // Kadın Giyim
-    '68137ab1358c748f63723fcf', // Erkek Giyim
-    '68137ab1358c748f63723fd0', // Çocuk Giyim
-    '68137ab3358c748f63723ff2'  // Ayakkabı ve Çanta
+    '68137ab1358c748f63723fde', // Bebek ve Çocuk
+    '68137ab3358c748f63723fec', // Kadın Giyim
+    '68137ab3358c748f63723fee', // Erkek Giyim
+    '68137ab3358c748f63723ff0', // Çocuk Giyim
+    '68137ab3358c748f63723ff2'  // Ayakkabı
   ],
   // Kitap & Hobi kategorisi ve alt kategorileri
   '68137ab0358c748f63723fcc': [ // Kitap & Hobi
-    '68137ab1358c748f63723fd3', // Kitaplar
-    '68137ab1358c748f63723fd5', // Müzik & Film
-    '68137ab1358c748f63723fd7', // Koleksiyon
-    '68137ab1358c748f63723fd8'  // El İşi
+    '68137ab0358c748f63723fd8'  // Kitap
   ],
   // Spor kategorisi ve alt kategorileri
   '68137ab3358c748f63723fee': [ // Spor
-    '68137ab3358c748f63723fef', // Spor Malzemeleri
-    '68137ab3358c748f63723ff0', // Outdoor
-    '68137ab3358c748f63723ff1', // Fitness
-    '68137ab4358c748f63723ff3'  // Bisiklet & Scooter
+    '68137ab0358c748f63723fd3'  // Spor
   ],
   // Oyun & Konsol kategorisi ve alt kategorileri
   '68137ab2358c748f63723fe5': [ // Oyun & Konsol
-    '68137ab2358c748f63723fe9', // Konsollar
-    '68137ab2358c748f63723fea', // Oyunlar
-    '68137ab2358c748f63723feb'  // Aksesuarlar
+    '68137ab4358c748f63723ff4', // Aksesuar
+    '68137ab0358c748f63723fd6'  // Oyun
   ]
 };
 
@@ -134,6 +128,11 @@ const ProductListScreen = ({ route, navigation }) => {
   const [sortOption, setSortOption] = useState('En Yeni');
   const [error, setError] = useState(null);
   const [isElektronikFilter, setIsElektronikFilter] = useState(false);
+  const [isEvEsyalariFilter, setIsEvEsyalariFilter] = useState(false);
+  const [isGiyimFilter, setIsGiyimFilter] = useState(false);
+  const [isKitapHobiFilter, setIsKitapHobiFilter] = useState(false);
+  const [isSporFilter, setIsSporFilter] = useState(false);
+  const [isOyunKonsolFilter, setIsOyunKonsolFilter] = useState(false);
 
   const { isOfflineMode } = useApp();
 
@@ -233,6 +232,36 @@ const ProductListScreen = ({ route, navigation }) => {
         setIsElektronikFilter(true);
       }
       
+      // Ev Eşyaları kategorisi için özel işlem
+      if (route.params.isEvEsyalariFilter) {
+        console.log('Ev Eşyaları kategorisi için özel filtreleme parametresi algılandı');
+        setIsEvEsyalariFilter(true);
+      }
+      
+      // Giyim kategorisi için özel işlem
+      if (route.params.isGiyimFilter) {
+        console.log('Giyim kategorisi için özel filtreleme parametresi algılandı');
+        setIsGiyimFilter(true);
+      }
+      
+      // Kitap & Hobi kategorisi için özel işlem
+      if (route.params.isKitapHobiFilter) {
+        console.log('Kitap & Hobi kategorisi için özel filtreleme parametresi algılandı');
+        setIsKitapHobiFilter(true);
+      }
+      
+      // Spor kategorisi için özel işlem
+      if (route.params.isSporFilter) {
+        console.log('Spor kategorisi için özel filtreleme parametresi algılandı');
+        setIsSporFilter(true);
+      }
+      
+      // Oyun & Konsol kategorisi için özel işlem
+      if (route.params.isOyunKonsolFilter) {
+        console.log('Oyun & Konsol kategorisi için özel filtreleme parametresi algılandı');
+        setIsOyunKonsolFilter(true);
+      }
+      
       if (route.params.sort === 'newest') {
         setSortOption('En Yeni');
       }
@@ -293,6 +322,43 @@ const ProductListScreen = ({ route, navigation }) => {
           setIsElektronikFilter(true);
           console.log('Elektronik kategorisi için özel filtreleme aktif edildi');
         }
+        
+        // Ev Eşyaları ana kategorisi için özel işlem
+        if (categoryNameForFilter === 'ev eşyaları' || 
+            route.params.categoryId === '68137aaf358c748f63723fca') {
+          setIsEvEsyalariFilter(true);
+          console.log('Ev Eşyaları kategorisi için özel filtreleme aktif edildi');
+        }
+        
+        // Giyim ana kategorisi için özel işlem
+        if (categoryNameForFilter === 'giyim' || 
+            route.params.categoryId === '68137ab0358c748f63723fcb') {
+          setIsGiyimFilter(true);
+          console.log('Giyim kategorisi için özel filtreleme aktif edildi');
+        }
+        
+        // Kitap & Hobi ana kategorisi için özel işlem
+        if (categoryNameForFilter === 'kitap & hobi' || categoryNameForFilter === 'kitap ve hobi' || 
+            route.params.categoryId === '68137ab0358c748f63723fcc') {
+          setIsKitapHobiFilter(true);
+          console.log('Kitap & Hobi kategorisi için özel filtreleme aktif edildi');
+        }
+        
+        // Spor ana kategorisi için özel işlem
+        if (categoryNameForFilter === 'spor' || 
+            categoryNameForFilter === 'spor ve outdoor' || 
+            categoryNameForFilter === 'spor & outdoor' ||
+            route.params.categoryId === '68137ab0358c748f63723fd3') {
+          setIsSporFilter(true);
+          console.log('Spor ve Outdoor kategorisi için özel filtreleme aktif edildi');
+        }
+        
+        // Oyun & Konsol ana kategorisi için özel işlem
+        if (categoryNameForFilter === 'oyun & konsol' || categoryNameForFilter === 'oyun ve konsol' || 
+            route.params.categoryId === '68137ab2358c748f63723fe5') {
+          setIsOyunKonsolFilter(true);
+          console.log('Oyun & Konsol kategorisi için özel filtreleme aktif edildi');
+        }
       }
       
       // Tam kategori eşleşmesi isteniyorsa
@@ -330,28 +396,41 @@ const ProductListScreen = ({ route, navigation }) => {
         console.log('Elektronik kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
         
         try {
-          // Elektronik ürünlerini başlık bazlı filtreleme ile getir
-          const electronicKeywords = ['telefon', 'bilgisayar', 'tablet', 'laptop', 'televizyon', 'tv', 'elektronik'];
+          // Elektronik kategorisi ID'si
+          const elektronikCategoryId = '68137aaf358c748f63723fc9';
           
-          // Tüm ürünleri getir ve sonra filtrele
-          const basicFilters = { ...filters };
-          delete basicFilters.categoryName; // Kategori adını kaldır
+          // Elektronik alt kategori ID'leri
+          const elektronikSubcategoryIds = [
+            '68137ab2358c748f63723fe2', // Bilgisayarlar
+            '68137ab2358c748f63723fe4', // Telefonlar
+            '68137ab2358c748f63723fe6', // Televizyonlar
+            '68137ab2358c748f63723fe8'  // Ses Sistemleri
+          ];
           
-          const response = await productService.getProducts(basicFilters);
+          // Tüm elektronik kategorileri (ana kategori + alt kategoriler)
+          const allElektronikCategoryIds = [elektronikCategoryId, ...elektronikSubcategoryIds];
           
-          if (response && response.success && Array.isArray(response.data)) {
-            // Elektronik ürünlerini başlık ve açıklamaya göre filtrele
-            const electronicsProducts = response.data.filter(product => {
-              const title = (product.title || '').toLowerCase();
-              const description = (product.description || '').toLowerCase();
-              const category = typeof product.category === 'object' 
-                ? (product.category?.name || '').toLowerCase() 
-                : (product.category || '').toLowerCase();
-              
-              // Kategori adı, başlık veya açıklamada elektronik anahtar kelimeleri var mı?
-              return category.includes('elektronik') || 
-                     electronicKeywords.some(keyword => title.includes(keyword)) ||
-                     electronicKeywords.some(keyword => description.includes(keyword));
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allElektronikCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let electronicsProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Elektronik sorgu ${index}: ${response.data.length} ürün bulundu`);
+              electronicsProducts = [...electronicsProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Elektronik sorgu ${index}: ${response.length} ürün bulundu`);
+              electronicsProducts = [...electronicsProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Elektronik sorgu ${index}: ${response.data.length} ürün bulundu`);
+              electronicsProducts = [...electronicsProducts, ...response.data];
+            }
             });
             
             console.log(`Elektronik kategorisi için ${electronicsProducts.length} ürün bulundu`);
@@ -362,9 +441,266 @@ const ProductListScreen = ({ route, navigation }) => {
               imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
               categoryName: product.category?.name || product.categoryName || product.category || 'Elektronik'
             }));
-          }
         } catch (error) {
           console.error('Elektronik ürünleri getirilirken hata:', error);
+          setError('Ürünler yüklenirken bir hata oluştu.');
+        }
+      } else if (isEvEsyalariFilter) {
+        console.log('Ev Eşyaları kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
+        
+        try {
+          // Ev Eşyaları kategorisi ID'si
+          const evEsyalariCategoryId = '68137aaf358c748f63723fca';
+          
+          // Ev Eşyaları alt kategori ID'leri
+          const evEsyalariSubcategoryIds = [
+            '68137ab4358c748f63723ff6', // Mobilya
+            '68137ab4358c748f63723ff8', // Mutfak Eşyaları
+            '68137ab4358c748f63723ffa', // Yatak ve Banyo
+            '68137ab5358c748f63723ffc'  // Dekorasyon
+          ];
+          
+          // Tüm ev eşyaları kategorileri (ana kategori + alt kategoriler)
+          const allEvEsyalariCategoryIds = [evEsyalariCategoryId, ...evEsyalariSubcategoryIds];
+          
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allEvEsyalariCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let evEsyalariProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Ev Eşyaları sorgu ${index}: ${response.data.length} ürün bulundu`);
+              evEsyalariProducts = [...evEsyalariProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Ev Eşyaları sorgu ${index}: ${response.length} ürün bulundu`);
+              evEsyalariProducts = [...evEsyalariProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Ev Eşyaları sorgu ${index}: ${response.data.length} ürün bulundu`);
+              evEsyalariProducts = [...evEsyalariProducts, ...response.data];
+            }
+          });
+            
+          console.log(`Ev Eşyaları kategorisi için ${evEsyalariProducts.length} ürün bulundu`);
+            
+          productsData = evEsyalariProducts.map(product => ({
+            ...product,
+            id: product._id || product.id || `product-${Math.random().toString(36).substr(2, 9)}`,
+            imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
+            categoryName: product.category?.name || product.categoryName || product.category || 'Ev Eşyaları'
+          }));
+        } catch (error) {
+          console.error('Ev Eşyaları ürünleri getirilirken hata:', error);
+          setError('Ürünler yüklenirken bir hata oluştu.');
+        }
+      } else if (isGiyimFilter) {
+        console.log('Giyim kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
+        
+        try {
+          // Giyim kategorisi ID'si
+          const giyimCategoryId = '68137ab0358c748f63723fcb';
+          
+          // Giyim alt kategori ID'leri
+          const giyimSubcategoryIds = [
+            '68137ab1358c748f63723fde', // Bebek ve Çocuk
+            '68137ab3358c748f63723fec', // Kadın Giyim
+            '68137ab3358c748f63723fee', // Erkek Giyim
+            '68137ab3358c748f63723ff0', // Çocuk Giyim
+            '68137ab3358c748f63723ff2'  // Ayakkabı
+          ];
+          
+          // Tüm giyim kategorileri (ana kategori + alt kategoriler)
+          const allGiyimCategoryIds = [giyimCategoryId, ...giyimSubcategoryIds];
+          
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allGiyimCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let giyimProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Giyim sorgu ${index}: ${response.data.length} ürün bulundu`);
+              giyimProducts = [...giyimProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Giyim sorgu ${index}: ${response.length} ürün bulundu`);
+              giyimProducts = [...giyimProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Giyim sorgu ${index}: ${response.data.length} ürün bulundu`);
+              giyimProducts = [...giyimProducts, ...response.data];
+            }
+          });
+            
+          console.log(`Giyim kategorisi için ${giyimProducts.length} ürün bulundu`);
+            
+          productsData = giyimProducts.map(product => ({
+            ...product,
+            id: product._id || product.id || `product-${Math.random().toString(36).substr(2, 9)}`,
+            imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
+            categoryName: product.category?.name || product.categoryName || product.category || 'Giyim'
+          }));
+        } catch (error) {
+          console.error('Giyim ürünleri getirilirken hata:', error);
+          setError('Ürünler yüklenirken bir hata oluştu.');
+        }
+      } else if (isKitapHobiFilter) {
+        console.log('Kitap & Hobi kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
+        
+        try {
+          // Kitap & Hobi kategorisi ID'si
+          const kitapHobiCategoryId = '68137ab0358c748f63723fcc';
+          
+          // Kitap & Hobi alt kategori ID'leri
+          const kitapHobiSubcategoryIds = [
+            '68137ab0358c748f63723fd8'  // Kitap
+          ];
+          
+          // Tüm kitap & hobi kategorileri (ana kategori + alt kategoriler)
+          const allKitapHobiCategoryIds = [kitapHobiCategoryId, ...kitapHobiSubcategoryIds];
+          
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allKitapHobiCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let kitapHobiProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Kitap & Hobi sorgu ${index}: ${response.data.length} ürün bulundu`);
+              kitapHobiProducts = [...kitapHobiProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Kitap & Hobi sorgu ${index}: ${response.length} ürün bulundu`);
+              kitapHobiProducts = [...kitapHobiProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Kitap & Hobi sorgu ${index}: ${response.data.length} ürün bulundu`);
+              kitapHobiProducts = [...kitapHobiProducts, ...response.data];
+            }
+          });
+            
+          console.log(`Kitap & Hobi kategorisi için ${kitapHobiProducts.length} ürün bulundu`);
+            
+          productsData = kitapHobiProducts.map(product => ({
+            ...product,
+            id: product._id || product.id || `product-${Math.random().toString(36).substr(2, 9)}`,
+            imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
+            categoryName: product.category?.name || product.categoryName || product.category || 'Kitap & Hobi'
+          }));
+        } catch (error) {
+          console.error('Kitap & Hobi ürünleri getirilirken hata:', error);
+          setError('Ürünler yüklenirken bir hata oluştu.');
+        }
+      } else if (isSporFilter) {
+        console.log('Spor kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
+        
+        try {
+          // Spor kategorisi ID'si (Ana Spor ve Outdoor kategorisi)
+          const sporCategoryId = '68137ab0358c748f63723fd3';
+          
+          // Spor ve Outdoor alt kategori ID'leri - sadece spor kategorisine ait olanlar
+          const sporSubcategoryIds = [
+            '68137ab0358c748f63723fd5'  // Diğer Spor kategorileri
+          ];
+          
+          // Tüm spor kategorileri (ana kategori + alt kategoriler)
+          const allSporCategoryIds = [sporCategoryId, ...sporSubcategoryIds];
+          
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allSporCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let sporProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Spor sorgu ${index}: ${response.data.length} ürün bulundu`);
+              sporProducts = [...sporProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Spor sorgu ${index}: ${response.length} ürün bulundu`);
+              sporProducts = [...sporProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Spor sorgu ${index}: ${response.data.length} ürün bulundu`);
+              sporProducts = [...sporProducts, ...response.data];
+            }
+          });
+            
+          console.log(`Spor kategorisi için ${sporProducts.length} ürün bulundu`);
+            
+          productsData = sporProducts.map(product => ({
+            ...product,
+            id: product._id || product.id || `product-${Math.random().toString(36).substr(2, 9)}`,
+            imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
+            categoryName: product.category?.name || product.categoryName || product.category || 'Spor ve Outdoor'
+          }));
+        } catch (error) {
+          console.error('Spor ürünleri getirilirken hata:', error);
+          setError('Ürünler yüklenirken bir hata oluştu.');
+        }
+      } else if (isOyunKonsolFilter) {
+        console.log('Oyun & Konsol kategorisi ve alt kategorileri için özel filtreleme yapılıyor...');
+        
+        try {
+          // Oyun & Konsol kategorisi ID'si
+          const oyunKonsolCategoryId = '68137ab2358c748f63723fe5';
+          
+          // Oyun & Konsol alt kategori ID'leri
+          const oyunKonsolSubcategoryIds = [
+            '68137ab4358c748f63723ff4', // Aksesuar
+            '68137ab0358c748f63723fd6'  // Oyun
+          ];
+          
+          // Tüm oyun & konsol kategorileri (ana kategori + alt kategoriler)
+          const allOyunKonsolCategoryIds = [oyunKonsolCategoryId, ...oyunKonsolSubcategoryIds];
+          
+          // Her bir kategori için ayrı ayrı istek gönder
+          const allProductsPromises = allOyunKonsolCategoryIds.map(categoryId => 
+            productService.getProducts({...filters, category: categoryId})
+          );
+          
+          // Tüm isteklerin tamamlanmasını bekle
+          const results = await Promise.all(allProductsPromises);
+          
+          // Tüm sonuçları birleştir
+          let oyunKonsolProducts = [];
+          results.forEach((response, index) => {
+            if (response && response.success && Array.isArray(response.data)) {
+              console.log(`Oyun & Konsol sorgu ${index}: ${response.data.length} ürün bulundu`);
+              oyunKonsolProducts = [...oyunKonsolProducts, ...response.data];
+            } else if (Array.isArray(response)) {
+              console.log(`Oyun & Konsol sorgu ${index}: ${response.length} ürün bulundu`);
+              oyunKonsolProducts = [...oyunKonsolProducts, ...response];
+            } else if (response && response.data && Array.isArray(response.data)) {
+              console.log(`Oyun & Konsol sorgu ${index}: ${response.data.length} ürün bulundu`);
+              oyunKonsolProducts = [...oyunKonsolProducts, ...response.data];
+            }
+          });
+            
+          console.log(`Oyun & Konsol kategorisi için ${oyunKonsolProducts.length} ürün bulundu`);
+            
+          productsData = oyunKonsolProducts.map(product => ({
+            ...product,
+            id: product._id || product.id || `product-${Math.random().toString(36).substr(2, 9)}`,
+            imageUrl: getProductImageUrl(product) || 'https://placehold.co/600x400/gray/white?text=No+Image',
+            categoryName: product.category?.name || product.categoryName || product.category || 'Oyun & Konsol'
+          }));
+        } catch (error) {
+          console.error('Oyun & Konsol ürünleri getirilirken hata:', error);
           setError('Ürünler yüklenirken bir hata oluştu.');
         }
       } else if (selectedCategoryId && CATEGORIES_WITH_SUBCATEGORIES[selectedCategoryId]) {
@@ -459,9 +795,10 @@ const ProductListScreen = ({ route, navigation }) => {
       }
       
       // Özel durumlarda kullanıcı tarafında sıralama yap
-      // Eğer isElektronikFilter veya alt kategorileri olan bir kategori seçilmişse,
+      // Eğer özel filtrelerden biri veya alt kategorileri olan bir kategori seçilmişse,
       // bu durumda birden fazla API çağrısı yapıldığı için server-side sıralama tam olarak çalışmıyor olabilir
-      if (isElektronikFilter || (selectedCategory && CATEGORIES_WITH_SUBCATEGORIES[selectedCategory])) {
+      if (isElektronikFilter || isEvEsyalariFilter || isGiyimFilter || isKitapHobiFilter || isSporFilter || isOyunKonsolFilter || 
+          (selectedCategory && CATEGORIES_WITH_SUBCATEGORIES[selectedCategory])) {
         console.log('Özel kategori için client-side sıralama yapılıyor:', sortOption);
         
         // Fiyata göre sıralama yap

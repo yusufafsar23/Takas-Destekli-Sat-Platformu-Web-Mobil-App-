@@ -30,11 +30,22 @@ const authService = {
 
       // Kullanıcı bilgilerini normalize et ve kaydet
       if (response.user) {
+        // Kullanıcı verisini normalize et
         const normalizedUser = {
           ...response.user,
           _id: response.user._id || response.user.id,
           id: response.user._id || response.user.id
         };
+        
+        // fullName alanından name ve surname alanlarını oluştur (yerel kullanım için)
+        if (normalizedUser.fullName) {
+          const nameParts = normalizedUser.fullName.split(' ');
+          if (nameParts.length > 0) {
+            normalizedUser.name = nameParts[0];
+            normalizedUser.surname = nameParts.slice(1).join(' ');
+          }
+        }
+        
         const userStr = JSON.stringify(normalizedUser);
         await AsyncStorage.setItem('user', userStr);
         await AsyncStorage.setItem('userData', userStr); // Yedek user storage
@@ -67,59 +78,45 @@ const authService = {
   // Kullanıcı kaydı
   async register(userData) {
     try {
-      // Handle profile image if provided
-      let formData = null;
-      
-      if (userData.profileImage && userData.profileImage.startsWith('file:')) {
-        // If profile image is a local file URI, create FormData
-        formData = new FormData();
-        
-        // Add text fields
-        Object.keys(userData).forEach(key => {
-          if (key !== 'profileImage') {
-            formData.append(key, userData[key]);
-          }
-        });
-        
-        // Add profile image
-        const filename = userData.profileImage.split('/').pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : 'image/jpeg';
-        
-        formData.append('profileImage', {
-          uri: userData.profileImage,
-          name: filename,
-          type
-        });
-      }
-      
-      // Use FormData if created, otherwise use regular JSON
-      const response = await api.post('/users/register', 
-        formData || userData,
-        formData ? {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          }
-        } : undefined
-      );
+      // Make a simple JSON request without handling profile image
+      const response = await api.post('/users/register', userData);
       
       // Token ve kullanıcı bilgilerini kaydet
-      if (response.data && response.data.token) {
-        await AsyncStorage.setItem('authToken', response.data.token);
+      if (response && response.token) {
+        await AsyncStorage.setItem('authToken', response.token);
+        await AsyncStorage.setItem('token', response.token); // Yedek token storage
         
-        if (response.data.refreshToken) {
-          await AsyncStorage.setItem('refreshToken', response.data.refreshToken);
+        if (response.refreshToken) {
+          await AsyncStorage.setItem('refreshToken', response.refreshToken);
         }
         
-        if (response.data.user) {
-          await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.user) {
+          // Kullanıcı verisini normalize et
+          const normalizedUser = {
+            ...response.user,
+            _id: response.user._id || response.user.id,
+            id: response.user._id || response.user.id
+          };
+          
+          // fullName alanından name ve surname alanlarını oluştur (yerel kullanım için)
+          if (normalizedUser.fullName) {
+            const nameParts = normalizedUser.fullName.split(' ');
+            if (nameParts.length > 0) {
+              normalizedUser.name = nameParts[0];
+              normalizedUser.surname = nameParts.slice(1).join(' ');
+            }
+          }
+          
+          const userStr = JSON.stringify(normalizedUser);
+          await AsyncStorage.setItem('user', userStr);
+          await AsyncStorage.setItem('userData', userStr); // Yedek user storage
         }
         
         // Offline modu devre dışı bırak, çünkü başarılı bir kayıt olduk
         await AsyncStorage.setItem('offlineMode', 'false');
       }
       
-      return response.data;
+      return response;
     } catch (error) {
       console.error('Register hatası:', error);
       throw error;
@@ -191,6 +188,16 @@ const authService = {
     }
   },
 
+  // Yeni doğrulama kodu gönderme
+  async resendVerificationCode(email) {
+    try {
+      const response = await api.post('/users/resend-verification', { email });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Profil güncelleme
   async updateProfile(profileData) {
     try {
@@ -199,7 +206,7 @@ const authService = {
         throw new Error('No auth token found');
       }
 
-      const response = await api.put('/users/profile', profileData, {
+      const response = await api.patch('/users/profile', profileData, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -226,6 +233,25 @@ const authService = {
     try {
       console.log('Sending profile update request:', userData);
       
+      // Backend'in beklediği formata dönüştür
+      // Sadece backend'in izin verdiği alanları gönder: 'username', 'fullName', 'phone', 'address', 'profilePicture'
+      const backendData = {};
+      
+      // name ve surname -> fullName olarak birleştir
+      if (userData.name) {
+        backendData.fullName = userData.name;
+        if (userData.surname) {
+          backendData.fullName += ' ' + userData.surname;
+        }
+      }
+      
+      // Diğer izin verilen alanları ekle
+      if (userData.phone) backendData.phone = userData.phone;
+      if (userData.address) backendData.address = userData.address;
+      if (userData.profilePicture) backendData.profilePicture = userData.profilePicture;
+      
+      console.log('Backend format:', backendData);
+      
       // Handle profile image if provided
       let formData = null;
       let response = null;
@@ -235,9 +261,9 @@ const authService = {
         formData = new FormData();
         
         // Add text fields
-        Object.keys(userData).forEach(key => {
+        Object.keys(backendData).forEach(key => {
           if (key !== 'profileImage') {
-            formData.append(key, userData[key]);
+            formData.append(key, backendData[key]);
           }
         });
         
@@ -253,54 +279,44 @@ const authService = {
         });
       }
       
-      // Try different endpoints to handle potential server variations
-      try {
-        // First try the standard endpoint with PATCH
-        try {
-          console.log('Trying PATCH to /users/profile');
-          response = await api.put(  // Direk PUT kullanıyorum, PATCH sorunlu olabilir
-            '/users/profile', 
-            formData || userData,
-            formData ? {
-              headers: {
-                'Content-Type': 'multipart/form-data',
-              }
-            } : undefined
-          );
-          console.log('Profile update response (PUT):', response);
-          
-          // Offline modda SimulateResponse yapısı nedeniyle olabilecek uyumsuzluğa karşı kontrol
-          if (response && response.data) {
-            response = response.data;
+      // Doğrudan API çağrısı yap, hata olsa bile offline moda geçme
+      console.log('Sending PATCH request to /users/profile');
+      response = await api.patch(
+        '/users/profile', 
+        formData || backendData,
+        formData ? {
+          headers: {
+            'Content-Type': 'multipart/form-data',
           }
-          
-          // Localde verileri güncelleyelim
-          this.updateLocalUserData(userData);
-          
-          // Başarılı yanıt döndür
-          return { success: true, user: userData };
-        } catch (error) {
-          console.error('PUT to /users/profile failed:', error.message);
-          
-          // Offline moda geçiş yap ve dummy başarılı yanıt döndür
-          await AsyncStorage.setItem('offlineMode', 'true');
-          console.log('Offline moda geçildi, yerel veriyi güncelliyoruz');
-          
-          // Localde verileri güncelleyelim
-          this.updateLocalUserData(userData);
-          
-          // Offline modda başarılı bir yanıt döndür
-          return { success: true, user: userData };
-        }
-      } catch (error) {
-        console.error('All endpoints failed:', error.message);
-        
-        // Hataya rağmen yerel verileri güncelle
-        this.updateLocalUserData(userData);
-        
-        // Offline yanıt
-        return { success: true, user: userData };
+        } : undefined
+      );
+      console.log('Profile update response:', response);
+      
+      // API yanıtını normalleştir
+      if (response && response.data) {
+        response = response.data;
       }
+      
+      // Sunucudan gelen kullanıcı verisini yerel depolamaya kaydet
+      if (response && response.user) {
+        // Local verileri güncellerken bio'yu da kaydet (sadece yerel)
+        const localUserData = {
+          ...backendData,
+          ...response.user,
+          bio: userData.bio // Bio alanını yerel olarak sakla
+        };
+        await this.updateLocalUserData(localUserData);
+        return { success: true, user: localUserData };
+      }
+      
+      // Sunucudan kullanıcı verisi gelmezse, gönderilen verileri kullan
+      const localUser = {
+        ...backendData,
+        bio: userData.bio // Bio alanını yerel olarak sakla
+      };
+      await this.updateLocalUserData(localUser);
+      return { success: true, user: localUser };
+      
     } catch (error) {
       console.error('Profil güncelleme hatası:', error);
       console.error('Hata detayları:', {
@@ -319,12 +335,36 @@ const authService = {
       const storedUser = await AsyncStorage.getItem('user');
       if (storedUser) {
         const parsedUser = JSON.parse(storedUser);
-        const updatedUser = { ...parsedUser, ...userData };
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        // Kullanıcı verisini güncelle
+        let updatedUser = { ...parsedUser };
+        
+        // fullName alanını işle
+        if (userData.fullName) {
+          updatedUser.fullName = userData.fullName;
+        } else if (userData.name && userData.surname) {
+          updatedUser.fullName = `${userData.name} ${userData.surname}`.trim();
+        } else if (userData.name) {
+          updatedUser.fullName = userData.name;
+        }
+        
+        // Diğer alanları güncelle
+        if (userData.phone !== undefined) updatedUser.phone = userData.phone;
+        if (userData.address !== undefined) updatedUser.address = userData.address;
+        if (userData.bio !== undefined) updatedUser.bio = userData.bio;
+        if (userData.profilePicture !== undefined) updatedUser.profilePicture = userData.profilePicture;
+        
+        // Yerel kullanım için name ve surname alanlarını da sakla
+        if (userData.name !== undefined) updatedUser.name = userData.name;
+        if (userData.surname !== undefined) updatedUser.surname = userData.surname;
+        
+        // Güncellenmiş veriyi kaydet
+        const updatedUserStr = JSON.stringify(updatedUser);
+        await AsyncStorage.setItem('user', updatedUserStr);
         console.log('Kullanıcı verisi AsyncStorage\'da güncellendi');
         
         // Yedek storage'ı da güncelle
-        await AsyncStorage.setItem('userData', JSON.stringify(updatedUser));
+        await AsyncStorage.setItem('userData', updatedUserStr);
       }
     } catch (storageError) {
       console.error('AsyncStorage güncelleme hatası:', storageError);
@@ -405,19 +445,39 @@ const authService = {
         throw new Error('No auth token found');
       }
 
+      console.log('Fetching current user profile from server');
       const response = await api.get('/users/profile', {
         headers: { Authorization: `Bearer ${token}` }
       });
+      console.log('Current user response:', response);
 
-      if (response) {
+      // API yanıtını normalleştir
+      let userData = response;
+      if (response && response.user) {
+        userData = response.user;
+      }
+
+      if (userData) {
+        // Kullanıcı verisini normalize et
         const normalizedUser = {
-          ...response,
-          _id: response._id || response.id,
-          id: response._id || response.id
+          ...userData,
+          _id: userData._id || userData.id,
+          id: userData._id || userData.id
         };
+        
+        // fullName alanından name ve surname alanlarını oluştur (yerel kullanım için)
+        if (normalizedUser.fullName) {
+          const nameParts = normalizedUser.fullName.split(' ');
+          if (nameParts.length > 0) {
+            normalizedUser.name = nameParts[0];
+            normalizedUser.surname = nameParts.slice(1).join(' ');
+          }
+        }
+        
         const userStr = JSON.stringify(normalizedUser);
         await AsyncStorage.setItem('user', userStr);
         await AsyncStorage.setItem('userData', userStr);
+        console.log('User data updated from server:', normalizedUser);
         return normalizedUser;
       }
 

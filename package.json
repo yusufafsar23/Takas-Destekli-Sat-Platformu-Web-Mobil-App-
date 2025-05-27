@@ -23,6 +23,7 @@
     "expo-network": "^7.1.5",
     "expo-notifications": "~0.29.14",
     "expo-status-bar": "~1.11.1",
+    "ml-random-forest": "^2.1.0",
     "mongoose": "^8.14.2",
     "node-fetch": "^3.3.2",
     "react": "18.2.0",

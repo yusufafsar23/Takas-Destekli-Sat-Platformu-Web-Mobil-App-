@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API tabanı URL - Takas platform backend sunucusu
-const API_BASE_URL = 'http://192.168.1.61:5000';
+const API_BASE_URL = 'http://192.168.1.61:5000/api';
 
 // Axios örneği oluşturma
 const api = axios.create({

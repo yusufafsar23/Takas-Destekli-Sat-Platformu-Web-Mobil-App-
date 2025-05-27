@@ -51,7 +51,10 @@ const Login = () => {
     }
     
     try {
-      await login(formData);
+      const response = await login(formData);
+      
+      // Üye girişi başarılı olduğunda doğrudan ana sayfaya yönlendir
+      // Email doğrulama kontrolü kaldırıldı
       navigate('/');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Giriş yapılamadı. Lütfen tekrar deneyin.');

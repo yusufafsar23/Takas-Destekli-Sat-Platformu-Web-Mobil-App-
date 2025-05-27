@@ -153,10 +153,10 @@ export const AuthProvider = ({ children }) => {
   };
 
   // E-posta doğrulama
-  const verifyEmail = async (token) => {
+  const verifyEmail = async (code, email) => {
     try {
       setIsLoading(true);
-      const response = await axios.post(`${API_URL}/users/verify-email`, { token });
+      const response = await axios.post(`${API_URL}/users/verify-email`, { code, email });
       
       const { user, token: newToken } = response.data;
       

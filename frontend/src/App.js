@@ -43,6 +43,7 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
   
+  // Email doğrulama kontrolü kaldırıldı
   // Kullanıcı varsa korunan sayfayı göster
   return children;
 };

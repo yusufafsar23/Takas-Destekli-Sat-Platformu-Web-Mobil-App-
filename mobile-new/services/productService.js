@@ -1,4 +1,5 @@
 import api from './api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Ürünleri getirme
 const getProducts = async (filters) => {
@@ -58,20 +59,134 @@ const getProducts = async (filters) => {
           if (product.category) {
             if (typeof product.category === 'object') {
               productCategory = (product.category.name || '').toLowerCase();
-              console.log(`Ürün kategorisi (object): ${productCategory}, aranan: ${categoryName}`);
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              } 
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (object): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             } else if (typeof product.category === 'string') {
               productCategory = product.category.toLowerCase();
-              console.log(`Ürün kategorisi (string): ${productCategory}, aranan: ${categoryName}`);
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              }
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (string): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             }
           }
           
           // categoryName özelligi varsa direkt onu da kontrol et
           if (product.categoryName) {
             const prodCatName = product.categoryName.toLowerCase();
-            console.log(`Ürün categoryName: ${prodCatName}, aranan: ${categoryName}`);
-            matched = matched || prodCatName.includes(categoryName);
+            // Kitap & Hobi için özel kontrol
+            if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+              const kitapHobiMatched = prodCatName === 'kitap & hobi' || 
+                        prodCatName === 'kitap ve hobi' || 
+                        prodCatName.includes('kitap') || 
+                        prodCatName.includes('hobi');
+              matched = matched || kitapHobiMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Kitap & Hobi eşleşme: ${kitapHobiMatched}`);
+            }
+            // Oyun & Konsol için özel kontrol
+            else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+              const oyunKonsolMatched = prodCatName === 'oyun & konsol' || 
+                        prodCatName === 'oyun ve konsol' || 
+                        prodCatName.includes('oyun') || 
+                        prodCatName.includes('konsol') ||
+                        prodCatName.includes('gaming');
+              matched = matched || oyunKonsolMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Oyun & Konsol eşleşme: ${oyunKonsolMatched}`);
+            }
+            // Spor ve Outdoor için özel kontrol
+            else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+              // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+              const isClothingCategory = prodCatName.includes('giyim') || 
+                                        prodCatName.includes('kadın') || 
+                                        prodCatName.includes('erkek') || 
+                                        prodCatName.includes('çocuk');
+              
+              const sporMatched = prodCatName === 'spor' || 
+                        prodCatName === 'spor ve outdoor' || 
+                        prodCatName === 'spor & outdoor' || 
+                        (prodCatName.includes('spor') && !isClothingCategory) || 
+                        prodCatName.includes('outdoor') || 
+                        prodCatName.includes('fitness') ||
+                        prodCatName.includes('kamp') ||
+                        prodCatName.includes('bisiklet') ||
+                        prodCatName.includes('koşu');
+              matched = matched || sporMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Spor ve Outdoor eşleşme: ${sporMatched}`);
+            }
+            else {
+              matched = matched || prodCatName.includes(categoryName);
+            }
           }
           
           // Kategori olmayan durum için ürün başlığını kontrol et
@@ -80,9 +195,18 @@ const getProducts = async (filters) => {
             if (categoryName === 'elektronik' && 
                 product.title.toLowerCase().match(/telefon|tablet|bilgisayar|laptop|tv|televizyon|elektronik|kulaklık|şarj|kamera/)) {
               matched = true;
-            } else if (categoryName === 'spor' && 
-                       product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma/)) {
+            } else if ((categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') && 
+                        product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma|outdoor|kamp|yürüyüş|bisiklet|tenis|dağcılık|kayak/)) {
               matched = true;
+              console.log(`Ürün başlığı Spor ve Outdoor ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') && 
+                       product.title.toLowerCase().match(/kitap|hobi|dergi|roman|plak|koleksiyon/)) {
+              matched = true;
+              console.log(`Ürün başlığı Kitap & Hobi ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') && 
+                       product.title.toLowerCase().match(/oyun|konsol|ps4|ps5|xbox|nintendo|gaming|game/)) {
+              matched = true;
+              console.log(`Ürün başlığı Oyun & Konsol ile eşleşti: ${product.title}`);
             }
           }
           
@@ -114,17 +238,134 @@ const getProducts = async (filters) => {
           if (product.category) {
             if (typeof product.category === 'object') {
               productCategory = (product.category.name || '').toLowerCase();
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              } 
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (object): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             } else if (typeof product.category === 'string') {
               productCategory = product.category.toLowerCase();
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              }
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (string): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             }
           }
           
           // categoryName özelligi varsa direkt onu da kontrol et
           if (product.categoryName) {
             const prodCatName = product.categoryName.toLowerCase();
-            matched = matched || prodCatName.includes(categoryName);
+            // Kitap & Hobi için özel kontrol
+            if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+              const kitapHobiMatched = prodCatName === 'kitap & hobi' || 
+                        prodCatName === 'kitap ve hobi' || 
+                        prodCatName.includes('kitap') || 
+                        prodCatName.includes('hobi');
+              matched = matched || kitapHobiMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Kitap & Hobi eşleşme: ${kitapHobiMatched}`);
+            }
+            // Oyun & Konsol için özel kontrol
+            else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+              const oyunKonsolMatched = prodCatName === 'oyun & konsol' || 
+                        prodCatName === 'oyun ve konsol' || 
+                        prodCatName.includes('oyun') || 
+                        prodCatName.includes('konsol') ||
+                        prodCatName.includes('gaming');
+              matched = matched || oyunKonsolMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Oyun & Konsol eşleşme: ${oyunKonsolMatched}`);
+            }
+            // Spor ve Outdoor için özel kontrol
+            else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+              // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+              const isClothingCategory = prodCatName.includes('giyim') || 
+                                        prodCatName.includes('kadın') || 
+                                        prodCatName.includes('erkek') || 
+                                        prodCatName.includes('çocuk');
+              
+              const sporMatched = prodCatName === 'spor' || 
+                        prodCatName === 'spor ve outdoor' || 
+                        prodCatName === 'spor & outdoor' || 
+                        (prodCatName.includes('spor') && !isClothingCategory) || 
+                        prodCatName.includes('outdoor') || 
+                        prodCatName.includes('fitness') ||
+                        prodCatName.includes('kamp') ||
+                        prodCatName.includes('bisiklet') ||
+                        prodCatName.includes('koşu');
+              matched = matched || sporMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Spor ve Outdoor eşleşme: ${sporMatched}`);
+            }
+            else {
+              matched = matched || prodCatName.includes(categoryName);
+            }
           }
           
           // Kategori olmayan durum için ürün başlığını kontrol et
@@ -133,9 +374,18 @@ const getProducts = async (filters) => {
             if (categoryName === 'elektronik' && 
                 product.title.toLowerCase().match(/telefon|tablet|bilgisayar|laptop|tv|televizyon|elektronik|kulaklık|şarj|kamera/)) {
               matched = true;
-            } else if (categoryName === 'spor' && 
-                       product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma/)) {
+            } else if ((categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') && 
+                        product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma|outdoor|kamp|yürüyüş|bisiklet|tenis|dağcılık|kayak/)) {
               matched = true;
+              console.log(`Ürün başlığı Spor ve Outdoor ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') && 
+                       product.title.toLowerCase().match(/kitap|hobi|dergi|roman|plak|koleksiyon/)) {
+              matched = true;
+              console.log(`Ürün başlığı Kitap & Hobi ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') && 
+                       product.title.toLowerCase().match(/oyun|konsol|ps4|ps5|xbox|nintendo|gaming|game/)) {
+              matched = true;
+              console.log(`Ürün başlığı Oyun & Konsol ile eşleşti: ${product.title}`);
             }
           }
           
@@ -172,17 +422,134 @@ const getProducts = async (filters) => {
           if (product.category) {
             if (typeof product.category === 'object') {
               productCategory = (product.category.name || '').toLowerCase();
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              } 
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (object): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (object): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             } else if (typeof product.category === 'string') {
               productCategory = product.category.toLowerCase();
-              matched = productCategory.includes(categoryName);
+              // Kitap & Hobi için özel kontrol
+              if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+                matched = productCategory === 'kitap & hobi' || 
+                          productCategory === 'kitap ve hobi' || 
+                          productCategory.includes('kitap') || 
+                          productCategory.includes('hobi');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Kitap & Hobi eşleşme: ${matched}`);
+              }
+              // Oyun & Konsol için özel kontrol
+              else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+                matched = productCategory === 'oyun & konsol' || 
+                          productCategory === 'oyun ve konsol' || 
+                          productCategory.includes('oyun') || 
+                          productCategory.includes('konsol') ||
+                          productCategory.includes('gaming');
+                console.log(`Ürün kategorisi (string): ${productCategory}, Oyun & Konsol eşleşme: ${matched}`);
+              }
+              // Spor ve Outdoor için özel kontrol
+              else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+                // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+                const isClothingCategory = productCategory.includes('giyim') || 
+                                          productCategory.includes('kadın') || 
+                                          productCategory.includes('erkek') || 
+                                          productCategory.includes('çocuk');
+                
+                matched = (productCategory === 'spor' || 
+                          productCategory === 'spor ve outdoor' || 
+                          productCategory === 'spor & outdoor' || 
+                          (productCategory.includes('spor') && !isClothingCategory) || 
+                          productCategory.includes('outdoor') || 
+                          productCategory.includes('fitness') ||
+                          productCategory.includes('kamp') ||
+                          productCategory.includes('bisiklet') ||
+                          productCategory.includes('koşu'));
+                console.log(`Ürün kategorisi (string): ${productCategory}, Spor ve Outdoor eşleşme: ${matched}`);
+              }
+              else {
+                matched = productCategory.includes(categoryName);
+              }
             }
           }
           
           // categoryName özelligi varsa direkt onu da kontrol et
           if (product.categoryName) {
             const prodCatName = product.categoryName.toLowerCase();
-            matched = matched || prodCatName.includes(categoryName);
+            // Kitap & Hobi için özel kontrol
+            if (categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') {
+              const kitapHobiMatched = prodCatName === 'kitap & hobi' || 
+                        prodCatName === 'kitap ve hobi' || 
+                        prodCatName.includes('kitap') || 
+                        prodCatName.includes('hobi');
+              matched = matched || kitapHobiMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Kitap & Hobi eşleşme: ${kitapHobiMatched}`);
+            }
+            // Oyun & Konsol için özel kontrol
+            else if (categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') {
+              const oyunKonsolMatched = prodCatName === 'oyun & konsol' || 
+                        prodCatName === 'oyun ve konsol' || 
+                        prodCatName.includes('oyun') || 
+                        prodCatName.includes('konsol') ||
+                        prodCatName.includes('gaming');
+              matched = matched || oyunKonsolMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Oyun & Konsol eşleşme: ${oyunKonsolMatched}`);
+            }
+            // Spor ve Outdoor için özel kontrol
+            else if (categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') {
+              // Giyim kategorilerini hariç tutarak sadece gerçek spor kategorilerini dahil et
+              const isClothingCategory = prodCatName.includes('giyim') || 
+                                        prodCatName.includes('kadın') || 
+                                        prodCatName.includes('erkek') || 
+                                        prodCatName.includes('çocuk');
+              
+              const sporMatched = prodCatName === 'spor' || 
+                        prodCatName === 'spor ve outdoor' || 
+                        prodCatName === 'spor & outdoor' || 
+                        (prodCatName.includes('spor') && !isClothingCategory) || 
+                        prodCatName.includes('outdoor') || 
+                        prodCatName.includes('fitness') ||
+                        prodCatName.includes('kamp') ||
+                        prodCatName.includes('bisiklet') ||
+                        prodCatName.includes('koşu');
+              matched = matched || sporMatched;
+              console.log(`Ürün categoryName: ${prodCatName}, Spor ve Outdoor eşleşme: ${sporMatched}`);
+            }
+            else {
+              matched = matched || prodCatName.includes(categoryName);
+            }
           }
           
           // Kategori olmayan durum için ürün başlığını kontrol et
@@ -191,9 +558,18 @@ const getProducts = async (filters) => {
             if (categoryName === 'elektronik' && 
                 product.title.toLowerCase().match(/telefon|tablet|bilgisayar|laptop|tv|televizyon|elektronik|kulaklık|şarj|kamera/)) {
               matched = true;
-            } else if (categoryName === 'spor' && 
-                       product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma/)) {
+            } else if ((categoryName === 'spor' || categoryName === 'spor ve outdoor' || categoryName === 'spor & outdoor') && 
+                        product.title.toLowerCase().match(/spor|fitness|koşu|futbol|basketbol|forma|outdoor|kamp|yürüyüş|bisiklet|tenis|dağcılık|kayak/)) {
               matched = true;
+              console.log(`Ürün başlığı Spor ve Outdoor ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'kitap & hobi' || categoryName === 'kitap ve hobi') && 
+                       product.title.toLowerCase().match(/kitap|hobi|dergi|roman|plak|koleksiyon/)) {
+              matched = true;
+              console.log(`Ürün başlığı Kitap & Hobi ile eşleşti: ${product.title}`);
+            } else if ((categoryName === 'oyun & konsol' || categoryName === 'oyun ve konsol') && 
+                       product.title.toLowerCase().match(/oyun|konsol|ps4|ps5|xbox|nintendo|gaming|game/)) {
+              matched = true;
+              console.log(`Ürün başlığı Oyun & Konsol ile eşleşti: ${product.title}`);
             }
           }
           
@@ -552,15 +928,43 @@ const getProductBySlug = async (slug) => {
 const createProduct = async (productData) => {
   try {
     console.log('Creating new product');
+    
+    // Token'ı manuel olarak kontrol et
+    const token = await AsyncStorage.getItem('authToken') || 
+                  await AsyncStorage.getItem('token') || 
+                  await AsyncStorage.getItem('auth_token');
+    
+    if (!token) {
+      console.error('Token bulunamadı! Ürün oluşturulamıyor.');
+      throw new Error('Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
+    
+    console.log('Token bulundu, ürün oluşturma isteği gönderiliyor');
+    
     const response = await api.post('/products', productData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
       },
     });
+    
     console.log('Product created successfully');
     return response.data;
   } catch (error) {
     console.error('Error creating product:', error);
+    
+    // Daha detaylı hata mesajı
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+      console.error('Error response headers:', error.response.headers);
+      
+      // 401 hatası için özel mesaj
+      if (error.response.status === 401) {
+        throw new Error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+      }
+    }
+    
     throw error;
   }
 };
@@ -569,6 +973,16 @@ const createProduct = async (productData) => {
 const updateProduct = async (id, productData) => {
   try {
     console.log(`Updating product: ${id}`);
+    
+    // Token'ı manuel olarak kontrol et
+    const token = await AsyncStorage.getItem('authToken') || 
+                  await AsyncStorage.getItem('token') || 
+                  await AsyncStorage.getItem('auth_token');
+    
+    if (!token) {
+      console.error('Token bulunamadı! Ürün güncellenemiyor.');
+      throw new Error('Oturum süreniz dolmuş olabilir. Lütfen tekrar giriş yapın.');
+    }
     
     // FormData olup olmadığını kontrol et
     if (productData instanceof FormData) {
@@ -615,6 +1029,7 @@ const updateProduct = async (id, productData) => {
     const response = await api.put(`/products/${id}`, productData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
       },
     });
     console.log('Product updated successfully');
@@ -626,6 +1041,12 @@ const updateProduct = async (id, productData) => {
       response: error.response?.data,
       status: error.response?.status
     });
+    
+    // 401 hatası için özel mesaj
+    if (error.response?.status === 401) {
+      throw new Error('Oturum süreniz dolmuş. Lütfen tekrar giriş yapın.');
+    }
+    
     throw error;
   }
 };

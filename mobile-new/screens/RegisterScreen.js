@@ -19,17 +19,18 @@ import authService from '../services/authService';
 
 const RegisterScreen = ({ navigation }) => {
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
-  const [profileImage, setProfileImage] = useState(null);
   const [secureTextEntry, setSecureTextEntry] = useState(true);
   const [secureConfirmTextEntry, setSecureConfirmTextEntry] = useState(true);
   const [loading, setLoading] = useState(false);
   
   // Hata durumları
   const [nameError, setNameError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [confirmPasswordError, setConfirmPasswordError] = useState('');
@@ -49,6 +50,23 @@ const RegisterScreen = ({ navigation }) => {
     }
     
     setNameError('');
+    return true;
+  };
+
+  const validateUsername = (text) => {
+    setUsername(text);
+    
+    if (!text) {
+      setUsernameError('Kullanıcı adı gerekli');
+      return false;
+    }
+    
+    if (text.length < 3) {
+      setUsernameError('Kullanıcı adı en az 3 karakter olmalıdır');
+      return false;
+    }
+    
+    setUsernameError('');
     return true;
   };
 
@@ -128,42 +146,16 @@ const RegisterScreen = ({ navigation }) => {
     return true;
   };
 
-  const pickImage = async () => {
-    try {
-      // Request permission to access media library
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      
-      if (!permissionResult.granted) {
-        Alert.alert('İzin Gerekli', 'Fotoğraf seçmek için galerinize erişim izni vermeniz gerekiyor.');
-        return;
-      }
-      
-      // Launch image picker
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.8,
-      });
-      
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        setProfileImage(result.assets[0].uri);
-      }
-    } catch (error) {
-      console.error('Resim seçme hatası:', error);
-      Alert.alert('Hata', 'Resim seçerken bir sorun oluştu.');
-    }
-  };
-
   const handleRegister = async () => {
     // Formun geçerliliğini kontrol et
     const isNameValid = validateName(name);
+    const isUsernameValid = validateUsername(username);
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
     const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
     const isPhoneValid = validatePhone(phone);
     
-    if (!isNameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid || !isPhoneValid) {
+    if (!isNameValid || !isUsernameValid || !isEmailValid || !isPasswordValid || !isConfirmPasswordValid || !isPhoneValid) {
       return;
     }
     
@@ -172,35 +164,55 @@ const RegisterScreen = ({ navigation }) => {
     try {
       // Prepare user data
       const userData = {
-        name,
+        username,
+        fullName: name,
         email,
         password,
-        phone,
-        profileImage
+        phone
       };
       
       // Register the user
       const response = await authService.register(userData);
       
       if (response && response.token) {
-        // AsyncStorage'e token kaydet
-        await AsyncStorage.setItem('userToken', response.token);
-        
-        // Ana ekrana yönlendir
-        navigation.reset({
-          index: 0,
-          routes: [{ name: 'HomeTabs' }],
-        });
+        // Başarılı kayıt mesajı göster
+        Alert.alert(
+          'Kayıt Başarılı',
+          'E-posta adresinize doğrulama kodu gönderildi. Lütfen e-postanızı kontrol edin.',
+          [
+            {
+              text: 'Tamam',
+              onPress: () => {
+                // Doğrulama ekranına otomatik yönlendir
+                navigation.navigate('VerifyEmail', { email });
+              }
+            }
+          ]
+        );
       } else {
         // Başarısız kayıt durumu
         Alert.alert(
           'Kayıt Hatası',
-          response?.message || 'Kayıt işlemi sırasında bir hata oluştu.'
+          'Kayıt işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.'
         );
       }
     } catch (error) {
       console.error('Kayıt olurken hata:', error);
-      Alert.alert('Hata', error.message || 'Kayıt işlemi sırasında bir hata oluştu');
+      
+      // Hata mesajını düzgün formatta hazırla
+      let errorMessage = 'Kayıt işlemi sırasında bir hata oluştu';
+      
+      if (error.response) {
+        if (error.response.data && error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.response.status === 400) {
+          errorMessage = 'Geçersiz bilgiler. Lütfen girdiğiniz bilgileri kontrol edin.';
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      Alert.alert('Hata', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -231,37 +243,12 @@ const RegisterScreen = ({ navigation }) => {
           >
             <Ionicons name="arrow-back" size={24} color="#333" />
           </TouchableOpacity>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require('../assets/icon.png')}
-              style={styles.logo}
-              defaultSource={require('../assets/icon.png')}
-            />
-            <Text style={styles.logoText}>Takas Platform</Text>
-          </View>
           <View style={styles.placeholderView} />
         </View>
         
         <View style={styles.formContainer}>
           <Text style={styles.title}>Kayıt Ol</Text>
           <Text style={styles.subtitle}>Hemen hesap oluşturun ve takas yapmaya başlayın</Text>
-          
-          {/* Profile Image Picker */}
-          <View style={styles.profileImageContainer}>
-            <TouchableOpacity onPress={pickImage} style={styles.profileImageWrapper}>
-              {profileImage ? (
-                <Image source={{ uri: profileImage }} style={styles.profileImage} />
-              ) : (
-                <View style={styles.profileImagePlaceholder}>
-                  <Ionicons name="person" size={50} color="#ccc" />
-                </View>
-              )}
-              <View style={styles.editIconContainer}>
-                <Ionicons name="camera" size={20} color="#fff" />
-              </View>
-            </TouchableOpacity>
-            <Text style={styles.changePhotoText}>Profil fotoğrafı eklemek için tıklayın</Text>
-          </View>
           
           <Input
             label="Ad Soyad"
@@ -270,6 +257,16 @@ const RegisterScreen = ({ navigation }) => {
             placeholder="Adınızı ve soyadınızı girin"
             error={nameError}
             leftIcon={<Ionicons name="person-outline" size={20} color="#666" />}
+          />
+          
+          <Input
+            label="Kullanıcı Adı"
+            value={username}
+            onChangeText={validateUsername}
+            placeholder="Kullanıcı adınızı girin"
+            error={usernameError}
+            leftIcon={<Ionicons name="at-outline" size={20} color="#666" />}
+            autoCapitalize="none"
           />
           
           <Input
@@ -374,20 +371,6 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
-  logoContainer: {
-    alignItems: 'center',
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    resizeMode: 'contain',
-  },
-  logoText: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginTop: 8,
-  },
   placeholderView: {
     width: 40,
   },
@@ -433,49 +416,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginLeft: 5,
-  },
-  profileImageContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  profileImageWrapper: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#f0f0f0',
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  profileImagePlaceholder: {
-    width: '100%',
-    height: '100%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  editIconContainer: {
-    position: 'absolute',
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#FF6B6B',
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  changePhotoText: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
-  },
+  }
 });
 
 export default RegisterScreen; 

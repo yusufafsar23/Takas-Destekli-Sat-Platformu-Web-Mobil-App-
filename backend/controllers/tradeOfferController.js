@@ -254,6 +254,8 @@ const getTradeOfferById = async (req, res) => {
 const acceptTradeOffer = async (req, res) => {
     try {
         const { responseMessage } = req.body;
+        console.log('Accept trade offer request body:', req.body);
+        
         const tradeOffer = await TradeOffer.findById(req.params.id);
 
         if (!tradeOffer) {
@@ -269,21 +271,42 @@ const acceptTradeOffer = async (req, res) => {
             return res.status(400).json({ error: 'Bu teklif artık beklemede değil.' });
         }
 
-        // Her iki ürünün de hala aktif olduğunu kontrol et
+        // Her iki ürünün de hala mevcut olduğunu kontrol et
         const requestedProduct = await Product.findById(tradeOffer.requestedProduct);
         const offeredProduct = await Product.findById(tradeOffer.offeredProduct);
 
-        if (!requestedProduct || requestedProduct.status !== 'active') {
-            return res.status(400).json({ error: 'Talep edilen ürün artık mevcut değil.' });
+        console.log('Requested product:', {
+            id: tradeOffer.requestedProduct,
+            found: !!requestedProduct,
+            status: requestedProduct?.status
+        });
+        
+        console.log('Offered product:', {
+            id: tradeOffer.offeredProduct,
+            found: !!offeredProduct,
+            status: offeredProduct?.status
+        });
+
+        if (!requestedProduct) {
+            return res.status(400).json({ error: 'Talep edilen ürün bulunamadı.' });
         }
 
-        if (!offeredProduct || offeredProduct.status !== 'active') {
-            return res.status(400).json({ error: 'Teklif edilen ürün artık mevcut değil.' });
+        if (!offeredProduct) {
+            return res.status(400).json({ error: 'Teklif edilen ürün bulunamadı.' });
+        }
+
+        // Ürün durumları kontrolü - sadece satılmış ürünleri reddet
+        if (requestedProduct.status === 'sold') {
+            return res.status(400).json({ error: 'Talep edilen ürün zaten satılmış.' });
+        }
+
+        if (offeredProduct.status === 'sold') {
+            return res.status(400).json({ error: 'Teklif edilen ürün zaten satılmış.' });
         }
 
         // Teklifi kabul et
         tradeOffer.status = 'accepted';
-        tradeOffer.responseMessage = responseMessage;
+        tradeOffer.responseMessage = responseMessage || '';
         tradeOffer.updatedAt = Date.now();
         await tradeOffer.save();
 
@@ -307,6 +330,7 @@ const acceptTradeOffer = async (req, res) => {
 
         res.json(tradeOffer);
     } catch (error) {
+        console.error('Error in acceptTradeOffer:', error);
         res.status(400).json({ error: error.message });
     }
 };
@@ -315,6 +339,8 @@ const acceptTradeOffer = async (req, res) => {
 const rejectTradeOffer = async (req, res) => {
     try {
         const { responseMessage } = req.body;
+        console.log('Reject trade offer request body:', req.body);
+        
         const tradeOffer = await TradeOffer.findById(req.params.id);
 
         if (!tradeOffer) {
@@ -331,12 +357,13 @@ const rejectTradeOffer = async (req, res) => {
         }
 
         tradeOffer.status = 'rejected';
-        tradeOffer.responseMessage = responseMessage;
+        tradeOffer.responseMessage = responseMessage || '';
         tradeOffer.updatedAt = Date.now();
         await tradeOffer.save();
 
         res.json(tradeOffer);
     } catch (error) {
+        console.error('Error in rejectTradeOffer:', error);
         res.status(400).json({ error: error.message });
     }
 };

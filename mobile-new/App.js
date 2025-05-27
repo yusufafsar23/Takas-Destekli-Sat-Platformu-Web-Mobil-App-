@@ -15,6 +15,7 @@ import MessagesScreen from './screens/MessagesScreen';
 import ProductDetailScreen from './screens/ProductDetailScreen';
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
 import AddProductScreen from './screens/AddProductScreen';
 import TradeOfferScreen from './screens/TradeOfferScreen';
 import ProfileEditScreen from './screens/ProfileEditScreen';
@@ -120,6 +121,7 @@ function AppNavigator() {
         <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
+        <Stack.Screen name="VerifyEmail" component={VerifyEmailScreen} />
         <Stack.Screen name="AddProduct" component={AddProductScreen} />
         <Stack.Screen name="TradeOffer" component={TradeOfferScreen} />
         <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />

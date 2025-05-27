@@ -14,7 +14,8 @@ import {
 } from 'react-native';
 import { Button } from '../components/Button';
 import { productService } from '../services';
-import { getProductImageUrl } from '../services/imageHelper';
+import { getProductImageUrl, getImageUrl } from '../services/imageHelper';
+import { API_SERVER_URL } from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '../context/AuthContext';
 import { PRODUCT_STATUS, CATEGORIES } from '../constants';
@@ -38,6 +39,24 @@ const EditProductScreen = ({ route, navigation }) => {
   const [productImages, setProductImages] = useState([]);
   const [imageUris, setImageUris] = useState([]);
   const [acceptsTradeOffers, setAcceptsTradeOffers] = useState(true);
+  
+  // Resim URI'lerini doğru formatta almak için yardımcı fonksiyon
+  const normalizeImageUri = (uri) => {
+    if (!uri) return null;
+    
+    // Eğer URI bir HTTP adresi ise, doğrudan kullan
+    if (uri.startsWith('http')) {
+      return uri;
+    }
+    
+    // Eğer URI yerel bir dosya ise, onu tam URI'ye dönüştür
+    if (uri.startsWith('/uploads/')) {
+      return `${API_SERVER_URL}${uri}`;
+    }
+    
+    // Diğer durumlar için orijinal URI'yi döndür
+    return uri;
+  };
   
   useEffect(() => {
     fetchProductDetails();
@@ -142,15 +161,16 @@ const EditProductScreen = ({ route, navigation }) => {
       if (productData.images && productData.images.length > 0) {
         const images = productData.images.map(image => {
           if (typeof image === 'string') {
-            return image;
+            return normalizeImageUri(image);
           } else if (image.url) {
-            return image.url;
+            return normalizeImageUri(image.url);
           } else if (image.path) {
-            return image.path;
+            return normalizeImageUri(image.path);
           }
           return null;
         }).filter(Boolean);
         
+        console.log('Normalize edilmiş resim URI\'leri:', images);
         setProductImages(images);
         setImageUris(images);
       }
@@ -171,16 +191,22 @@ const EditProductScreen = ({ route, navigation }) => {
       return;
     }
     
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-    
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      const newImageUri = result.assets[0].uri;
-      setImageUris(prev => [...prev, newImageUri]);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const newImageUri = result.assets[0].uri;
+        console.log('Seçilen resim:', newImageUri);
+        setImageUris(prev => [...prev, newImageUri]);
+      }
+    } catch (error) {
+      console.error('Resim seçilirken hata oluştu:', error);
+      Alert.alert('Hata', 'Resim seçilirken bir sorun oluştu. Lütfen tekrar deneyin.');
     }
   };
   
@@ -369,7 +395,7 @@ const EditProductScreen = ({ route, navigation }) => {
           <Text style={styles.label}>Kategori*</Text>
           <View style={styles.pickerContainer}>
             <FlatList
-              data={CATEGORIES}
+              data={CATEGORIES.filter(cat => cat.id !== '0')}
               keyExtractor={(item) => item.id}
               renderItem={({ item }) => (
                 <TouchableOpacity
@@ -510,17 +536,25 @@ const EditProductScreen = ({ route, navigation }) => {
           <Text style={styles.label}>Ürün Görselleri</Text>
           
           <View style={styles.imageList}>
-            {imageUris.map((uri, index) => (
-              <View key={index} style={styles.imageContainer}>
-                <Image source={{ uri }} style={styles.productImage} />
-                <TouchableOpacity 
-                  style={styles.removeButton}
-                  onPress={() => removeImage(index)}
-                >
-                  <Text style={styles.removeButtonText}>X</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+            {imageUris.map((uri, index) => {
+              console.log(`Resim ${index}: ${uri}`);
+              return (
+                <View key={index} style={styles.imageContainer}>
+                  <Image 
+                    source={{ uri: uri.startsWith('http') ? uri : getProductImageUrl({ images: [uri] }) }} 
+                    style={styles.productImage} 
+                    resizeMode="cover"
+                    tintColor={null}
+                  />
+                  <TouchableOpacity 
+                    style={styles.removeButton}
+                    onPress={() => removeImage(index)}
+                  >
+                    <Text style={styles.removeButtonText}>X</Text>
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
             
             <TouchableOpacity 
               style={styles.addImageButton}
@@ -654,22 +688,30 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     margin: 5,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   productImage: {
     width: '100%',
     height: '100%',
     borderRadius: 8,
+    backgroundColor: '#e5e5e5',
+    resizeMode: 'cover',
   },
   removeButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: 5,
+    right: 5,
     backgroundColor: '#FF6B6B',
     width: 24,
     height: 24,
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 10,
   },
   removeButtonText: {
     color: '#fff',

@@ -102,19 +102,15 @@ const CategoryDropdown = ({ category, subcategories }) => {
       },
       '4': { // Kitap & Hobi
         'Kitaplar': '401',
-        'Müzik & Film': '402',
-        'Koleksiyon': '403',
-        'El İşi': '404'
+        'Müzik & Film': '402'
       },
       '5': { // Spor
         'Spor Malzemeleri': '501',
-        'Outdoor': '502',
         'Fitness': '503',
         'Bisiklet & Scooter': '504'
       },
       '6': { // Oyun & Konsol
-        'Konsollar': '601',
-        'Oyunlar': '602',
+        'Oyunlar & Konsollar': '601',
         'Aksesuarlar': '603'
       }
     };
@@ -166,20 +162,7 @@ const CategoryDropdown = ({ category, subcategories }) => {
         <p className="text-muted category-count mb-0">{category.count || 0} İlan</p>
       </Link>
 
-      {/* Alt menüleri tamamen devre dışı bırakıyoruz */}
-      {false && isOpen && subcategories && subcategories.length > 0 && (
-        <div className="subcategories-dropdown">
-          <ul className="subcategory-list">
-            {subcategories.map((subcat) => (
-              <li key={subcat.id} className="subcategory-item">
-                <Link to={`/categories/${categoryId}/${getSubcategoryId(subcat, categoryId)}`} className="subcategory-link">
-                  {subcat.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {/* Alt kategoriler tamamen kaldırıldı */}
     </div>
   );
 };

@@ -344,12 +344,6 @@ function Header() {
                         <NavDropdown.Item as={Link} to="/categories/4/402" className="subcategory-item">
                           — Müzik & Film
                         </NavDropdown.Item>
-                        <NavDropdown.Item as={Link} to="/categories/4/403" className="subcategory-item">
-                          — Koleksiyon
-                        </NavDropdown.Item>
-                        <NavDropdown.Item as={Link} to="/categories/4/404" className="subcategory-item">
-                          — El İşi
-                        </NavDropdown.Item>
                       </div>
                     </>
                   )}
@@ -374,15 +368,12 @@ function Header() {
                         <NavDropdown.Item as={Link} to="/categories/5/501" className="subcategory-item">
                           — Spor Malzemeleri
                         </NavDropdown.Item>
-                        <NavDropdown.Item as={Link} to="/categories/5/502" className="subcategory-item">
-                          — Outdoor
-                        </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/categories/5/503" className="subcategory-item">
                           — Fitness
-                </NavDropdown.Item>
+                        </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/categories/5/504" className="subcategory-item">
                           — Bisiklet & Scooter
-                </NavDropdown.Item>
+                        </NavDropdown.Item>
                       </div>
                     </>
                   )}
@@ -399,20 +390,17 @@ function Header() {
                     >
                       <i className={`bi bi-chevron-down ${activeCategory === 6 ? 'rotated' : ''}`}></i>
                     </button>
-                </NavDropdown.Item>
+                  </NavDropdown.Item>
                   {activeCategory === 6 && (
                     <>
                       <NavDropdown.Divider />
                       <div className="subcategory-group">
                         <NavDropdown.Item as={Link} to="/categories/6/601" className="subcategory-item">
-                          — Konsollar
-                </NavDropdown.Item>
-                        <NavDropdown.Item as={Link} to="/categories/6/602" className="subcategory-item">
-                          — Oyunlar
-                </NavDropdown.Item>
+                          — Oyunlar & Konsollar
+                        </NavDropdown.Item>
                         <NavDropdown.Item as={Link} to="/categories/6/603" className="subcategory-item">
                           — Aksesuarlar
-                </NavDropdown.Item>
+                        </NavDropdown.Item>
                       </div>
                     </>
                   )}
