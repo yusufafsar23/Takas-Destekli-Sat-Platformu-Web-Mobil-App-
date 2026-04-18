@@ -63,9 +63,11 @@ npm start
 ![Ekran 1](images/sc1.png)
 ![Ekran 2](images/sc2.png)
 ![Ekran 3](images/sc3.png)
-![Ekran 4](images/sc4.jpeg)
-![Ekran 5](images/sc5.jpeg)
-![Ekran 6](images/sc6.jpeg)
+<p>
+  <img src="images/sc4.jpeg" width="250">
+  <img src="images/sc5.jpeg" width="250">
+  <img src="images/sc6.jpeg" width="250">
+</p>
 
 
 ## Geliştirme Süreci
