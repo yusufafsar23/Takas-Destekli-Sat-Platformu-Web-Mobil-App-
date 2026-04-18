@@ -58,6 +58,15 @@ cd mobile
 npm install
 npm start
 ```
+##Bazı Göürntüler
+
+(images/sc1)
+(images/sc2)
+(images/sc3)
+(images/sc5.jpeg)
+(images/sc4.jpeg)
+(images/sc6.jepg)
+
 
 ## Geliştirme Süreci
 
