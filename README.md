@@ -1,10 +1,10 @@
 # Takas Destekli Satış Platformu
 
-Hem sıfır hem de ikinci el ürünlerin alım satımının yapılabildiği, takas özelliği ile desteklenen e-ticaret platformu.
+Hem sıfır hem de ikinci el ürünlerin alım satımının yapılabildiği, takas özelliği ile desteklenen e-ticaret platformu(WEB & MOBILE).
 
 ## Proje Tanımı
 
-Bu proje, kullanıcıların ürünlerini satışa sunabileceği veya takas teklifleri alabileceği/gönderebileceği bir platformdur. Satıcılar, takas tekliflerini kabul edebilir veya yalnızca belirli bir ürün türü ile takas yapmayı tercih edebilirler.
+Bu proje, kullanıcıların ürünlerini satışa sunabileceği veya takas teklifleri alabileceği/gönderebileceği entegre çalışan web ve mobil platformdur. Satıcılar, takas tekliflerini kabul edebilir veya yalnızca belirli bir ürün türü ile takas yapmayı tercih edebilirler.
 
 ## Özellikler
 
@@ -58,14 +58,14 @@ cd mobile
 npm install
 npm start
 ```
-##Bazı Göürntüler
+## Bazı Görüntüler
 
-(images/sc1)
-(images/sc2)
-(images/sc3)
-(images/sc5.jpeg)
-(images/sc4.jpeg)
-(images/sc6.jepg)
+![Ekran 1](images/sc1.png)
+![Ekran 2](images/sc2.png)
+![Ekran 3](images/sc3.png)
+![Ekran 4](images/sc4.jpeg)
+![Ekran 5](images/sc5.jpeg)
+![Ekran 6](images/sc6.jpeg)
 
 
 ## Geliştirme Süreci
